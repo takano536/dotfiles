@@ -1,7 +1,4 @@
-# set config home if not set
-if [ -z "$XDG_CONFIG_HOME" ]; then
-    export XDG_CONFIG_HOME="$HOME/.config"
-fi
+export XDG_CONFIG_HOME="$HOME/.config/linux"
 
 # run runcoms
 . "$XDG_CONFIG_HOME/shell/common/env.rc.sh"
