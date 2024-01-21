@@ -1,0 +1,224 @@
+format = """
+[](fg:bgcolor_username)\
+$os\
+$username\
+$hostname\
+[](fg:bgcolor_username bg:bgcolor_directory)\
+$directory\
+[](fg:bgcolor_directory bg:bgcolor_git)\
+$git_branch\
+$git_status\
+[](fg:bgcolor_git bg:bgcolor_language)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$python\
+$rust\
+$scala\
+[](fg:bgcolor_language bg:bgcolor_clock)\
+$time\
+[ ](fg:bgcolor_clock)$line_break\
+$character\
+"""
+
+palette = 'tokyonight'
+
+[palettes.tokyonight]
+bgcolor_username = '#a3aed2'
+fgcolor_username = '#090c0c'
+bgcolor_directory = '#769ff0'
+fgcolor_directory = '#e3e5e5'
+bgcolor_git = '#394260'
+fgcolor_git = '#769ff0'
+bgcolor_language = '#212736'
+fgcolor_language = '#769ff0'
+bgcolor_clock = '#1d2230'
+fgcolor_clock = 'white'
+color_success = 'green'
+color_error = 'red'
+color_vimnolmal = 'green'
+color_vimreplace = 'purple'
+color_vimvisual = 'yellow'
+
+[palettes.onehalf]
+bgcolor_username = '#c678dd'
+fgcolor_username = 'black'
+bgcolor_directory = '#61afef'
+fgcolor_directory = 'black'
+bgcolor_git = '#98c379'
+fgcolor_git = 'black'
+bgcolor_language = '#e5c07b'
+fgcolor_language = 'black'
+bgcolor_clock = '#e06c75'
+fgcolor_clock = 'black'
+color_success = 'green'
+color_error = 'red'
+color_vimnolmal = '#98c379'
+color_vimreplace = '#c678dd'
+color_vimvisual = '#e5c07b'
+
+[palettes.m365_princess]
+bgcolor_username = '#9A348E'
+fgcolor_username = 'white'
+bgcolor_directory = '#DA627D'
+fgcolor_directory = 'black'
+bgcolor_git = '#FCA17D'
+fgcolor_git = 'black'
+bgcolor_language = '#86BBD8'
+fgcolor_language = 'black'
+bgcolor_clock = '#33658A'
+fgcolor_clock = 'white'
+color_success = 'green'
+color_error = 'red'
+color_vimnolmal = '#047E84'
+color_vimreplace = '#9A348E'
+color_vimvisual = '#FCA17D'
+
+[palettes.gruvbox]
+bgcolor_username = '#d65d0e'
+fgcolor_username = 'black'
+bgcolor_directory = '#d79921'
+fgcolor_directory = 'black'
+bgcolor_git = '#689d6a'
+fgcolor_git = 'black'
+bgcolor_language = '#458588'
+fgcolor_language = 'black'
+bgcolor_clock = '#3c3836'
+fgcolor_clock = 'white'
+color_success = 'green'
+color_error = 'red'
+color_vimnolmal = 'green'
+color_vimreplace = '#b16286'
+color_vimvisual = '#d79921'
+
+[os]
+disabled = false
+style = "fg:fgcolor_username bg:bgcolor_username"
+format = '[ $symbol]($style)'
+
+[os.symbols]
+Windows = ""
+Ubuntu = ""
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+
+[username]
+show_always = true
+style_user = "fgcolor_username bg:bgcolor_username"
+style_root = "fgcolor_username bg:bgcolor_username"
+format = '[ $user ]($style)'
+disabled = false
+
+[hostname]
+ssh_only = true
+style = "fgcolor_username bg:bgcolor_username"
+format = '[ $hostname ]($style)'
+disabled = false
+
+[directory]
+style = "fg:fgcolor_directory bg:bgcolor_directory"
+format = "[ $path ]($style)"
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "fg:fgcolor_git bg:bgcolor_git"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "fg:fgcolor_git bg:bgcolor_git"
+format = '[($all_status$ahead_behind )]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:fgcolor_clock bg:bgcolor_clock"
+format = '[  $time ]($style)'
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[❯](bold fg:color_success)'
+error_symbol = '[❯](bold fg:color_error)'
+vimcmd_symbol = '[](bold fg:color_vimnolmal)'
+vimcmd_replace_one_symbol = '[](bold fg:color_vimreplace)'
+vimcmd_replace_symbol = '[](bold fg:color_vimreplace)'
+vimcmd_visual_symbol = '[](bold fg:color_vimvisual)'
+
+[c]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[elixir]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[scala]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+symbol = ""
+style = "fg:fgcolor_language bg:bgcolor_language"
+format = '[ $symbol ($version)( \($virtualenv\)) ]($style)'

@@ -1,0 +1,2 @@
+/* 新しいタブボタンを非表示*/
+#tabs-newtab-button, #new-tab-button{display: none !important}

@@ -1,0 +1,125 @@
+{
+	// Font
+	"font_face"    : "CaskaydiaCove NF",
+	"font_size"    : 11,
+	"font_options" : [
+		"gray_antialias",
+		"subpixel_antialias"
+	],
+
+	// Theme
+	"theme"       : "auto",
+	"light_theme" : "Material-Theme-Lighter.sublime-theme",
+	"dark_theme"  : "Material-Theme-Palenight.sublime-theme",
+	
+	// Color scheme
+	"color_scheme"       : "auto",
+	"light_color_scheme" : "Packages/Material Theme/schemes/Material-Theme-Lighter.tmTheme",
+	"dark_color_scheme"  : "Packages/Material Theme/schemes/Material-Theme-Palenight.tmTheme",
+
+	// Material Accent
+  	"material_theme_accent_acid-lime"   : true, // Set acid-lime accent color
+  	"material_theme_accent_blue"        : true, // Set blue accent color
+  	"material_theme_accent_brba"        : true, // Set Breaking Bad green accent color
+  	"material_theme_accent_bright-teal" : true, // Set bright-teal accent color
+  	"material_theme_accent_cyan"        : true, // Set cyan accent color
+  	"material_theme_accent_graphite"    : true, // Set graphite accent color
+  	"material_theme_accent_indigo"      : true, // Set indigo accent color
+  	"material_theme_accent_lime"        : true, // Set lime green accent color
+  	"material_theme_accent_orange"      : true, // Set orange accent color
+  	"material_theme_accent_pink"        : true, // Set pink accent color
+  	"material_theme_accent_purple"      : true, // Set purple accent color
+  	"material_theme_accent_red"         : true, // Set pale red accent color
+  	"material_theme_accent_sky"         : true, // Set bright-cyan accent color
+  	"material_theme_accent_tomato"      : true, // Set tomato red accent color
+  	"material_theme_accent_yellow"      : true, // Set yellow accent color
+  
+  	// Material Panels
+  	"material_theme_accent_scrollbars" : true, // Enable accent color for scrollbars
+  	"material_theme_accent_titlebar"   : true, // Enable accent color for titlebar
+  	"material_theme_bright_scrollbars" : true, // Bright scrollbars puck color
+  	"material_theme_compact_panel"     : true, // Set minimal padding for the search panel
+  	"material_theme_contrast_mode"     : true, // Enable sidebar and panels contrast mode
+  	"material_theme_panel_separator"   : true, // Show bottom panel separator
+  	"material_theme_small_statusbar"   : true, // Set small status bar
+  	"material_theme_titlebar"          : true, // Enable title bar (OS X 10.10+)
+  
+  	// Material Sidebar
+  	"material_theme_arrow_folders"            : true, // Replace folder icons with arrows
+  	"material_theme_big_fileicons"            : true, // Show bigger file type icons
+  	"material_theme_bullet_tree_indicator"    : true, // Set a bullet as active tree indicator
+  	"material_theme_compact_sidebar"          : true, // Set compact side bar
+  	"material_theme_disable_fileicons"        : true, // Hide sidebar file type icons
+  	"material_theme_disable_folder_animation" : true, // Disable folder animation
+  	"material_theme_disable_tree_indicator"   : true, // Disable sidebar file indicator
+  	"material_theme_tree_headings"            : true, // Show sidebar headings
+  
+  	// Material Tabs
+  	"material_theme_bold_tab"       : true, // Make the tab labels bolder
+  	"material_theme_small_tab"      : true, // Set small tabs
+  	"material_theme_tabs_autowidth" : true, // Enable autowidth for tabs
+  	"material_theme_tabs_separator" : true, // Show tabs separator, this disables tab hover animation
+
+	// UI
+	"ui_separator"       : true,
+	"ui_wide_scrollbars" : true,
+	
+	// Line padding & margin
+	"line_padding_bottom" : 3,
+	"line_padding_top"    : 3,
+	"margin"              : 0,
+
+	// Editor
+	"show_definitions"    : false,
+	"scroll_past_end"     : false,
+	"highlight_line"      : true,
+	"highlight_gutter"    : false,
+	"overlay_scroll_bars" : "enabled",
+
+	// File manager
+	"index_files" : true,
+
+	// Minimap
+	"always_show_minimap_viewport" : true,
+
+	// Caret
+	"caret_extra_bottom" : 2,
+	"caret_extra_top"    : 1,
+	"caret_extra_width"  : 1,
+	"caret_style"        : "blink",
+	
+	// Newline
+	"ensure_newline_at_eof_on_save" : true,
+
+	// Indent
+	"tab_size"                 : 4,
+	"translate_tabs_to_spaces" : true,
+	"smart_indent"             : true,
+	"indent_guide_options"     : [
+		"draw_normal",
+		"draw_active"
+	],
+	
+	// Closing window action
+	"hot_exit"            : false, 
+	"remember_open_files" : false,
+	
+	// Status bar
+	"show_encoding" : true,
+	"show_line_endings": true,
+
+	// Title bar
+	"show_full_path" : true,
+
+	// Tab bar
+	"show_scroll_tabs_buttons"  : false,
+	"show_tabs_dropdown_button" : false,
+	"show_new_tab_button"       : false,
+	"highlight_modified_tabs"   : false,
+	"enable_tab_scrolling"      : false,
+
+	// Ignore packages
+	"ignored_packages" : [
+		"Vintage",
+	],
+}
