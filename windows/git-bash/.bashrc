@@ -6,3 +6,7 @@ export XDG_CONFIG_HOME="$HOME/.config/linux"
 . "$XDG_CONFIG_HOME/shell/common/keybind.rc.sh"
 . "$XDG_CONFIG_HOME/shell/common/alias.rc.sh"
 . "$XDG_CONFIG_HOME/shell/common/appinit.rc.sh"
+
+# starship
+export STARSHIP_CONFIG="$HOME/.config/windows/starship/prompt.toml"
+eval "$(starship init bash)"
