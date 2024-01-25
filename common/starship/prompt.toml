@@ -3,12 +3,12 @@ format = """
 $os\
 $username\
 $hostname\
-[](fg:bgcolor_username bg:bgcolor_directory)\
+[](fg:bgcolor_username bg:bgcolor_directory)\
 $directory\
-[](fg:bgcolor_directory bg:bgcolor_git)\
+[](fg:bgcolor_directory bg:bgcolor_git)\
 $git_branch\
 $git_status\
-[](fg:bgcolor_git bg:bgcolor_language)\
+[](fg:bgcolor_git bg:bgcolor_language)\
 $c\
 $elixir\
 $elm\
@@ -21,7 +21,7 @@ $nodejs\
 $python\
 $rust\
 $scala\
-[](fg:bgcolor_language bg:bgcolor_clock)\
+[](fg:bgcolor_language bg:bgcolor_clock)\
 $time\
 [ ](fg:bgcolor_clock)$line_break\
 $character\
