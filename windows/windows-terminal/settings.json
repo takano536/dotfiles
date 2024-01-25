@@ -16,6 +16,10 @@
             "keys": "ctrl+v"
         },
         {
+            "command": "find",
+            "keys": "ctrl+shift+f"
+        },
+        {
             "command": 
             {
                 "action": "splitPane",
@@ -23,10 +27,6 @@
                 "splitMode": "duplicate"
             },
             "keys": "alt+shift+d"
-        },
-        {
-            "command": "find",
-            "keys": "ctrl+shift+f"
         }
     ],
     "copyFormatting": "none",
@@ -98,6 +98,18 @@
                 "name": "Git Bash",
                 "snapOnInput": true,
                 "startingDirectory": "%USERPROFILE%"
+            },
+            {
+                "guid": "{48321fdc-2e11-5ee4-aa4b-36e35aaa5fd9}",
+                "hidden": true,
+                "name": "Developer Command Prompt for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{408303db-243d-5b77-b554-8049044afdaa}",
+                "hidden": true,
+                "name": "Developer PowerShell for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
             }
         ]
     },

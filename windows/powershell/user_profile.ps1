@@ -56,6 +56,8 @@ $env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
 ##### Others #####
 Import-Module Terminal-Icons
 Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
+Import-Module z
 Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 Invoke-Expression (&starship init powershell)
