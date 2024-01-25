@@ -23,7 +23,7 @@ $rust\
 $scala\
 [](fg:bgcolor_language bg:bgcolor_clock)\
 $time\
-[ ](fg:bgcolor_clock)$line_break\
+[ ](fg:bgcolor_clock)$line_break\
 $character\
 """
 
