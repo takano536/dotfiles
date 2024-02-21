@@ -37,3 +37,7 @@ export SAVEHIST=100000
 
 # python history
 export PYTHONSTARTUP="$XDG_CONFIG_HOME/python/.pythonrc"
+
+# rust
+export CARGO_HOME="$XDG_DATA_HOME/cargo"
+export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
