@@ -28,6 +28,12 @@ function Invoke-As-Admin () {
 function Get-DirItem () {
     Get-ChildItem $args | Format-Wide Name -AutoSize
 }
+function Update-App ( [string]$app ) {
+    $workspaceDirpath = "$env:USERPROFILE\Documents\Python\app-get"
+    $pythonPath = "$workspaceDirpath\.app-get-venv\Scripts\python.exe"
+    $scriptPath = "$workspaceDirpath\appget.py"
+    & $pythonPath $scriptPath update $app
+}
 
 ##### Alias #####
 Set-Alias sudo Invoke-As-Admin
@@ -44,6 +50,7 @@ function sha1sum { Get-FileHash $args -Algorithm SHA1 }
 function sha256sum { Get-FileHash $args }
 function la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
 function ll { Get-ChildItem -force $args }
+function appget{ Update-App $args }
 
 ##### Env #####
 $env:XDG_CONFIG_HOME = "$env:USERPROFILE\.config\windows"
