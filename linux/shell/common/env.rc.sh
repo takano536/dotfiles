@@ -1,13 +1,13 @@
 if [ -d "$HOME/bin" ] ; then
-    PATH="$HOME/bin:$PATH"
+    export PATH="$HOME/bin:$PATH"
 fi
 
 if [ -d "$HOME/.local/bin" ] ; then
-    PATH="$HOME/.local/bin:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 if [ -d "$HOME/.local/lib" ] ; then
-    MODULE_PATH="$HOME/.local/lib:$MODULE_PATH"
+    export MODULE_PATH="$HOME/.local/lib:$MODULE_PATH"
 fi
 
 # xdg
