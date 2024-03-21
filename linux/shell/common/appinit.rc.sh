@@ -14,6 +14,5 @@ if [[ -d "$XDG_DATA_HOME/cargo" ]]; then
     . "$CARGO_HOME/env"
 fi
 
-
 # startship
 eval "$(starship init $curr_shell)"

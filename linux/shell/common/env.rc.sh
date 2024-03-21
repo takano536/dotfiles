@@ -23,6 +23,14 @@ if [[ -d "$XDG_DATA_HOME/asdf" ]]; then
     export ASDF_CONFIG_FILE="$XDG_CONFIG_HOME/asdf/.asdfrc"
 fi
 
+# rust
+if [[ -d "$XDG_DATA_HOME/cargo" ]]; then
+    export CARGO_HOME="$XDG_DATA_HOME/cargo"
+fi
+if [[ -d "$XDG_DATA_HOME/rustup" ]]; then
+    export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+fi
+
 # less
 export LESSHISTFILE="$XDG_CACHE_HOME/less/history"
 
@@ -37,7 +45,3 @@ export SAVEHIST=100000
 
 # python history
 export PYTHONSTARTUP="$XDG_CONFIG_HOME/python/.pythonrc"
-
-# rust
-export CARGO_HOME="$XDG_DATA_HOME/cargo"
-export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
