@@ -33,6 +33,7 @@ setopt auto_menu                                         # 補完候補が複数
 setopt complete_in_word                                  # カーソル位置で補完する
 setopt list_types                                        # 補完候補一覧でファイルの種別をマーク表示
 setopt list_packed                                       # 補完候補を詰めて表示
+setopt magic_equal_subst                                 # --prefix=の後のパスを補完
 
 # History
 setopt hist_ignore_space     # コマンドラインの先頭がスペースで始まる場合ヒストリに追加しない
