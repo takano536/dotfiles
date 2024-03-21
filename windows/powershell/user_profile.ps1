@@ -61,10 +61,12 @@ $env:LESSHISTFILE = "$env:XDG_CACHE_HOME\less\.lesshst"
 $env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
 
 ##### Others #####
-Import-Module Terminal-Icons
-Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
-Import-Module z
-Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionSource HistoryAndPlugin
 Set-PSReadLineOption -PredictionViewStyle ListView
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
+Import-Module -Name CompletionPredictor
+Import-Module -Name posh-git
+Import-Module -Name Terminal-Icons
+Import-Module -Name z
 Invoke-Expression (&starship init powershell)
