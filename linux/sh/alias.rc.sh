@@ -1,4 +1,3 @@
-# exa is a modern replacement for ls
 if type 'eza' > /dev/null 2>&1; then
     alias ls='eza --icons'
 fi
