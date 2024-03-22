@@ -1,3 +1,5 @@
+export XDG_CONFIG_HOME="$HOME/.config"
+
 # run runcoms
 source "$XDG_CONFIG_HOME/sh/env.rc.sh"
 source "$XDG_CONFIG_HOME/zsh/base.rc.zsh"
