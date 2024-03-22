@@ -193,4 +193,5 @@ Set-PSReadLineKeyHandler `
 Import-Module -Name posh-git
 Import-Module -Name Terminal-Icons
 Import-Module -Name z
+Enable-ExperimentalFeature -Name PSNativePSPathResolution
 Invoke-Expression (&starship init powershell)

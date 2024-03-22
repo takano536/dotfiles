@@ -36,7 +36,7 @@ let g:skip_loading_mswin        = 1
 
 " plugins
 if has('unix') | call plug#begin('$XDG_DATA_HOME/nvim/plugged') | endif
-if has('win32') || has ('win64') | call plug#begin('$HOME\.config\windows\nvim\plugged') | endif
+if has('win32') || has ('win64') | call plug#begin('$HOME\.config\nvim\plugged') | endif
 Plug 'folke/tokyonight.nvim',
 Plug 'nvim-lualine/lualine.nvim'
 Plug 'nvim-tree/nvim-web-devicons'
