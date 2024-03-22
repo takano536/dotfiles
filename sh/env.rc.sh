@@ -11,7 +11,7 @@ if [ -d "$HOME/.local/lib" ] ; then
 fi
 
 # xdg
-export XDG_CONFIG_HOME="$HOME/.config/linux"
+export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
@@ -40,7 +40,7 @@ export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship/prompt.toml"
 # shell history
 curr_shell=$(ps -p $$ | tail +2 | awk '{print $NF}')
 export HISTFILE="$XDG_CACHE_HOME/$curr_shell/.${curr_shell}_history"
-export HISTSIZE=1000
+export HISTSIZE=100000
 export SAVEHIST=100000
 
 # python history

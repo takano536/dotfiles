@@ -1,4 +1,4 @@
-export XDG_CONFIG_HOME="$HOME/.config/linux"
+export XDG_CONFIG_HOME="$HOME/.config"
 
 # run runcoms
 source "$XDG_CONFIG_HOME/sh/env.rc.sh"

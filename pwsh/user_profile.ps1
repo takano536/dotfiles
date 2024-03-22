@@ -53,10 +53,6 @@ function ll { Get-ChildItem -force $args }
 function appget{ Update-App $args }
 
 ##### Env #####
-$env:XDG_CONFIG_HOME = "$env:USERPROFILE\.config\windows"
-$env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
-$env:XDG_DATA_HOME = "$env:USERPROFILE\.local\share"
-$env:XDG_STATE_HOME = "$env:USERPROFILE\.local\state"
 $env:LESSHISTFILE = "$env:XDG_CACHE_HOME\less\.lesshst"
 $env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
 
