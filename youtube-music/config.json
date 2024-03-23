@@ -1,0 +1,90 @@
+{
+	"window-size": {
+		"width": 940,
+		"height": 642
+	},
+	"window-maximized": true,
+	"window-position": {
+		"x": 339,
+		"y": 123
+	},
+	"url": "https://music.youtube.com/watch?v=eynZFXRK68k&list=PLoU_pUr7hUJIVSiv4-wtEAqpUkTNOxYim&index=0",
+	"options": {
+		"tray": false,
+		"appVisible": true,
+		"autoUpdates": true,
+		"alwaysOnTop": false,
+		"hideMenu": true,
+		"hideMenuWarned": true,
+		"startAtLogin": false,
+		"disableHardwareAcceleration": false,
+		"removeUpgradeButton": true,
+		"restartOnConfigChanges": false,
+		"trayClickPlayPause": false,
+		"autoResetAppCache": false,
+		"resumeOnStart": true,
+		"likeButtons": "",
+		"proxy": "",
+		"startingPage": "Home",
+		"overrideUserAgent": false,
+		"usePodcastParticipantAsArtist": false,
+		"themes": [],
+		"language": "ja"
+	},
+	"plugins": {
+		"notifications": {},
+		"video-toggle": {
+			"enabled": true,
+			"hideVideo": false,
+			"mode": "disabled",
+			"forceHide": false,
+			"align": "middle"
+		},
+		"precise-volume": {
+			"globalShortcuts": {}
+		},
+		"discord": {
+			"enabled": true,
+			"autoReconnect": true,
+			"activityTimeoutEnabled": true,
+			"activityTimeoutTime": 600000,
+			"playOnYouTubeMusic": true,
+			"hideGitHubButton": true,
+			"hideDurationLeft": false,
+			"listenAlong": true
+		},
+		"album-color-theme": {
+			"enabled": true,
+			"ratio": 0.8
+		},
+		"ambient-mode": {
+			"enabled": false
+		},
+		"compact-sidebar": {
+			"enabled": true
+		},
+		"taskbar-mediacontrol": {
+			"enabled": true
+		},
+		"blur-nav-bar": {
+			"enabled": false
+		},
+		"bypass-age-restrictions": {
+			"enabled": true
+		},
+		"sponsorblock": {
+			"enabled": true
+		},
+		"navigation": {
+			"enabled": false
+		},
+		"in-app-menu": {
+			"enabled": true
+		}
+	},
+	"__internal__": {
+		"migrations": {
+			"version": "3.3.4"
+		}
+	}
+}
