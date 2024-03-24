@@ -13,3 +13,8 @@ source "$XDG_CONFIG_HOME/sh/alias.rc.sh"
 # if type 'fish' > /dev/null 2>&1; then
 #     exec fish
 # fi
+
+# start posh
+if type 'pwsh' > /dev/null 2>&1; then
+    exec pwsh
+fi
