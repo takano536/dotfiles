@@ -14,8 +14,9 @@ Import-Module PSReadLine
 Import-Module -Name CompletionPredictor
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin 
 Set-PSReadLineOption -PredictionViewStyle ListView
-Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadlineOption -HistoryNoDuplicates
+Set-PSReadLineOption -EditMode Windows
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadLineKeyHandler `
     -Key "(", "{", "[" `
     -BriefDescription "InsertPairedBraces" `
