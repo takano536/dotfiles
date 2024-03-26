@@ -51,4 +51,22 @@ setopt append_history        # 複数の zsh を同時に使う時など history
 # Others
 autoload -U colors && colors  # 色の有効化
 setopt always_last_prompt     # 無駄なスクロールを避ける
-export REPORTTIME=3           # 実行したプロセスの消費時間が3秒以上かかったら
+export REPORTTIME=3           # 実行したプロセスの消費時間が3秒以上かかったら詳細情報を表示
+
+# Zinit plugs
+# zinit light marlonrichert/zsh-autocomplete   # コマンド補完
+zinit light agkozak/zsh-z                      # zジャンプ
+zinit light zsh-users/zsh-syntax-highlighting  # シンタックスハイライト
+zinit light hlissner/zsh-autopair              # 括弧などのペアの自動入力削除
+zinit light zsh-users/zsh-autosuggestions      # 履歴補完
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=16'        # 履歴補完の文字の色
+
+# Fzf
+export FZF_DEFAULT_OPTS='--height 70% --reverse --select-1 --exit-0 --multi'
+function fzf-select-history() {
+    BUFFER=$(history -n -r 1 | fzf --query "$LBUFFER" --reverse)
+    CURSOR=$#BUFFER
+    zle reset-prompt
+}
+zle -N fzf-select-history
+bindkey '^r' fzf-select-history

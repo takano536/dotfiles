@@ -190,7 +190,6 @@ Set-PSReadLineKeyHandler `
 }
 
 ##### Others #####
-Import-Module -Name posh-git
 Import-Module -Name Terminal-Icons
 Import-Module -Name z
 Invoke-Expression (&starship init powershell)
