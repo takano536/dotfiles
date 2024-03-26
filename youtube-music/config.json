@@ -1,14 +1,14 @@
 {
 	"window-size": {
-		"width": 940,
-		"height": 642
+		"width": 607,
+		"height": 415
 	},
-	"window-maximized": true,
+	"window-maximized": false,
 	"window-position": {
-		"x": 339,
-		"y": 123
+		"x": 337,
+		"y": 121
 	},
-	"url": "https://music.youtube.com/watch?v=eynZFXRK68k&list=PLoU_pUr7hUJIVSiv4-wtEAqpUkTNOxYim&index=0",
+	"url": "https://music.youtube.com/watch?v=7rEsCDgi9Kk&list=RDAMPLPLoU_pUr7hUJJb5iI0JJd9oUMyCoGeep34&index=0&sq=1",
 	"options": {
 		"tray": false,
 		"appVisible": true,
@@ -55,7 +55,7 @@
 		},
 		"album-color-theme": {
 			"enabled": true,
-			"ratio": 0.8
+			"ratio": 0.5
 		},
 		"ambient-mode": {
 			"enabled": false
