@@ -55,8 +55,9 @@ setopt globdots               # 補完でドットファイルを表示する
 export REPORTTIME=3           # 実行したプロセスの消費時間が3秒以上かかったら詳細情報を表示
 
 # Zinit plugs
-zinit light marlonrichert/zsh-autocomplete     # 自動補完
-zinit light zsh-users/zsh-autosuggestions      # 履歴補完
-zinit light agkozak/zsh-z                      # zジャンプ
-zinit light zsh-users/zsh-syntax-highlighting  # シンタックスハイライト
-zinit light hlissner/zsh-autopair              # 括弧などの自動入力・削除
+zinit light zsh-users/zsh-autosuggestions
+zinit wait lucid blockf light-mode for \
+    @'Aloxaf/fzf-tab' \
+    @'agkozak/zsh-z' \
+    @'zsh-users/zsh-syntax-highlighting' \
+    @'hlissner/zsh-autopair'
