@@ -57,8 +57,7 @@ $env:LESSHISTFILE = "$env:XDG_CACHE_HOME\less\.lesshst"
 $env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
 
 ##### PSReadLineOption #####
-Import-Module PSReadLine
-Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
+Import-Module -Name PSReadLine
 Import-Module -Name CompletionPredictor
 Enable-PowerType
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin 
