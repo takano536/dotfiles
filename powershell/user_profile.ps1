@@ -14,7 +14,6 @@ $modules = @(
     'PSReadLine',
     'CompletionPredictor',
     'PowerType',
-    'Terminal-Icons',
     'z'
 )
 $modules | ForEach-Object {
@@ -158,7 +157,6 @@ Set-PSReadLineKeyHandler `
 }
 
 ##### Others #####
-Import-Module -Name Terminal-Icons
 Import-Module -Name z
 Invoke-Expression (&starship init powershell)
 

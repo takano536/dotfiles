@@ -46,3 +46,9 @@ function Global:sha256sum { Get-FileHash $args }
 function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
 function Global:ll { Get-ChildItem -force $args }
 function Global:appget { Update-App $args }
+
+##### Modules #####
+if (-not (Get-Module -Name Terminal-Icons -ListAvailable)) {
+    Install-Module -Name Terminal-Icons -Force -Scope CurrentUser
+}
+Import-Module -Name Terminal-Icons

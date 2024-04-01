@@ -23,17 +23,14 @@ $env:PYTHONSTARTUP = "$env:XDG_CONFIG_HOME/python/.pythonrc"
 
 ##### Aliases #####
 $error.clear()
-try { Get-Command -All eza }
+try { Get-Command -All eza | Out-Null }
 catch {}
 if (!$error) { function Global:ls { eza --icons $args } }
-function Global:ll { ls -alF $args }
-function Global:la { ls -a $args }
-function Global:l { ls -l1F $args }
+function Global:ll { ls -alF }
+function Global:la { ls -a }
+function Global:l { ls -l1F }
 
 ##### App init #####
 if (Test-Path "$XDG_DATA_HOME/asdf") {
     . "$ASDF_DIR/asdf.ps1"
-}
-if (Test-Path "$XDG_DATA_HOME/cargo") {
-    . "$CARGO_HOME/env"
 }
