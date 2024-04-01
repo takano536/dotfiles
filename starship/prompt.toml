@@ -137,7 +137,7 @@ fish_indicator = 'fish'
 powershell_indicator = 'posh'
 unknown_indicator = 'mystery shell'
 style = "fgcolor_username bg:bgcolor_username"
-format = '[@$indicator ]($style)'
+format = '[#$indicator ]($style)'
 disabled = false
 
 [hostname]
