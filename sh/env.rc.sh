@@ -7,7 +7,7 @@ if [ -d "$HOME/.local/bin" ] ; then
 fi
 
 if [ -d "$HOME/.local/lib" ] ; then
-    export MODULE_PATH="$HOME/.local/lib:$MODULE_PATH"
+    export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
 fi
 
 # xdg
