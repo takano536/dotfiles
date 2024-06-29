@@ -23,9 +23,10 @@ $modules | ForEach-Object {
 }
 
 ##### PSReadLineOption #####
-Import-Module -Name PSReadLine
-Import-Module -Name CompletionPredictor
-Enable-PowerType
+$importedModules = Get-Module
+if (!($importedModules.Name.Contains('PSReadLine'))) { Import-Module -Name PSReadLine }
+if (!($importedModules.Name.Contains('CompletionPredictor'))) { Import-Module -Name CompletionPredictor }
+if (!($importedModules.Name.Contains('PowerType'))) { Enable-PowerType }
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin 
 Set-PSReadLineOption -PredictionViewStyle ListView
 Set-PSReadlineOption -HistoryNoDuplicates
@@ -157,7 +158,7 @@ Set-PSReadLineKeyHandler `
 }
 
 ##### Others #####
-Import-Module -Name z
+if (!($importedModules.Name.Contains('z'))) { Import-Module -Name z }
 Invoke-Expression (&starship init powershell)
 
 if ($IsWindows) {
