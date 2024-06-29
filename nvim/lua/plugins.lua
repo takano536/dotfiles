@@ -54,22 +54,10 @@ return require('packer').startup(function(use)
     use 'MunifTanjim/nui.nvim' -- noice.nvimで必要
     use 'rcarriga/nvim-notify' -- noice.nvimで必要
     require('trouble').setup({
-        views = {
-            mini = {
-                win_options = {
-                    winblend = 0, -- 背景を透明化
-                },
-            },
-        },
-    }) -- folke/trouble
+        views = { mini = { win_options = { winblend = 0 }}},
+    })
     require('noice').setup({
-        views = {
-            mini = {
-                win_options = {
-                    winblend = 0, -- 背景を透明化
-                },
-            },
-        },
-    }) -- folke/noice.nvim
+        views = { mini = { win_options = { winblend = 0 }}},
+    })
 
 end)
