@@ -9,8 +9,8 @@ local opts = {
     cursorline = true, -- 現在のカーソルを強調表示
 
     -- 不透明度
-    winblend = 5, -- ウィンドウ
-    pumblend = 5, -- ポップアップメニュー
+    winblend = 0, -- ウィンドウ
+    pumblend = 0, -- ポップアップメニュー
 
     -- ステータスバー
     wildmenu = true, -- 入力に応じた候補を表示
@@ -26,9 +26,9 @@ local opts = {
     expandtab   = true, -- Tabをスペースに置換
 
     -- エンコード
-    encoding      = "utf-8",       -- Vimの内部文字コード
-    fileencoding  = "utf-8",       -- 書き込み時の文字コード
-    fileencodings = "utf-8,cp932", -- 読み込み時の文字コード
+    encoding      = 'utf-8',       -- Vimの内部文字コード
+    fileencoding  = 'utf-8',       -- 書き込み時の文字コード
+    fileencodings = 'utf-8,cp932', -- 読み込み時の文字コード
 
 }
 

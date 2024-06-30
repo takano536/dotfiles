@@ -25,39 +25,109 @@ for _, plug in ipairs(plugs) do vim.g[plug] = 1 end
 
 -- packerを使ってプラグインを読み込む
 vim.cmd [[ packadd packer.nvim ]]
-return require('packer').startup(function(use)
+require('packer').startup(function(use)
 
     -- カラースキーム
     use 'folke/tokyonight.nvim'
-    require('tokyonight').setup({
-        transparent = true,
-        styles = {
-            sidebars = 'transparent',
-            floats   = 'transparent',
-        },
-    }) -- folke/tokyonight
 
     -- ステータスライン
     use 'nvim-lualine/lualine.nvim'
-    custom_theme = require('lualine.themes.tokyonight') -- テーマを抽出
-    custom_theme.normal.c.bg = 'None'                   -- 背景を透明化
-    require('lualine').setup{ 
-        options = { theme = custom_theme }
-    }
 
     -- シンタックスハイライト
     use 'nvim-treesitter/nvim-treesitter' 
+
+    -- 括弧の色付け
+    use 'HiPhish/rainbow-delimiters.nvim'
     
     -- UIデザイン
     use 'folke/trouble.nvim'   -- 通知デザイン
     use 'folke/noice.nvim'     -- コマンドパレット
     use 'MunifTanjim/nui.nvim' -- noice.nvimで必要
     use 'rcarriga/nvim-notify' -- noice.nvimで必要
-    require('trouble').setup({
-        views = { mini = { win_options = { winblend = 0 }}},
-    })
-    require('noice').setup({
-        views = { mini = { win_options = { winblend = 0 }}},
-    })
 
 end)
+
+-- tokyonight
+require('tokyonight').setup({
+    transparent = true,
+    styles = {
+        sidebars = 'transparent',
+        floats   = 'transparent',
+    },
+})
+
+-- lualine
+local custom_theme = require('lualine.themes.tokyonight')
+custom_theme.normal.c.bg = 'None'
+require('lualine').setup{ 
+    options = { theme = custom_theme }
+}
+
+-- nvim-treesitter
+local langs = {
+    'bash',
+    'c',
+    'cmake',
+    'cpp',
+    'csv',
+    'gitignore',
+    'json',
+    'lua',
+    'make',
+    'matlab',
+    'python',
+    'ssh_config',
+    'toml',
+    'vim',
+    'xml',
+}
+require('nvim-treesitter.configs').setup {
+    highlight = { enable = true },
+    ensure_installed = langs,
+}
+
+-- rainbow-delimiters
+local highlights = {
+    'RainbowRed',
+    'RainbowYellow',
+    'RainbowBlue',
+    'RainbowOrange',
+    'RainbowGreen',
+    'RainbowViolet',
+    -- 'RainbowCyan',
+}
+local hexes = {
+    '#7AA2F7',
+    '#FFCF7D',
+    '#BB9AF7',
+    '#2AC3DE',
+    '#9ECE6A',
+    '#FF9E64',
+}
+for i, hex in ipairs(hexes) do vim.api.nvim_set_hl(0, highlights[i], { fg = hex }) end
+local rainbow_delimiters = require 'rainbow-delimiters'
+vim.g.rainbow_delimiters = {
+    strategy = {
+        [''] = rainbow_delimiters.strategy['global'],
+        vim = rainbow_delimiters.strategy['local'],
+    },
+    query = {
+        [''] = 'rainbow-delimiters',
+        lua = 'rainbow-blocks',
+    },
+    priority = {
+        [''] = 110,
+        lua = 210,
+    },
+    highlight = highlights
+}
+
+-- noice
+require('noice').setup({
+    views = { mini = { win_options = { winblend = 0 }}},
+})
+
+-- trouble
+require('trouble').setup({
+    views = { mini = { win_options = { winblend = 0 }}},
+})
