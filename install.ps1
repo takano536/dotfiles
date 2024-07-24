@@ -109,27 +109,28 @@ Set-Location $firefoxProfile
 (Get-ChildItem "$env:XDG_CONFIG_HOME\firefox").FullName | ForEach-Object {
     $filename = (Get-Item $_).Name
     if (Test-Path "$firefoxProfile\$filename") { Remove-Item "$firefoxProfile\$filename" -Recurse -Force }
-    if ((Get-Item $_).PSIsContainer) { sudo ln -d $_ } else { sudo ln -s $_ }
+    if ((Get-Item $_).PSIsContainer) { sudo cmd /c "mklink /d $filename $_" } else { sudo New-Item -ItemType SymbolicLink -Value $_ -Path $filename }
 }
 
 # git-bash
 Set-Location $env:USERPROFILE
 if (Test-Path "$env:USERPROFILE\.bashrc") { Remove-Item "$env:USERPROFILE\.bashrc" -Force }
-sudo ln -s "$env:XDG_CONFIG_HOME\git-bash\.bashrc" "$env:USERPROFILE\.bashrc"
+sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\git-bash\.bashrc" -Path "$env:USERPROFILE\.bashrc"
 attrib +h "$env:USERPROFILE\.bashrc"
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
+New-Item $pwshProfile -ItemType Directory -ErrorAction SilentlyContinue
 Set-Location $pwshProfile
 if (Test-Path "$pwshProfile\Microsoft.PowerShell_profile.ps1") { Remove-Item "$pwshProfile\Microsoft.PowerShell_profile.ps1" -Force }
-sudo ln -s "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" "$pwshProfile\Microsoft.PowerShell_profile.ps1"
-sudo ln -s "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" "$pwshProfile\Microsoft.VSCode_profile.ps1"
+sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" -Path "$pwshProfile\Microsoft.PowerShell_profile.ps1"
+sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" -Path "$pwshProfile\Microsoft.VSCode_profile.ps1"
 
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
 Set-Location $wtProfile
 if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" -Force }
-sudo ln -s "$env:XDG_CONFIG_HOME\windows-terminal\settings.json" "$wtProfile\settings.json"
+sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\windows-terminal\settings.json"-Path "$wtProfile\settings.json"
 
 ### post-process
 
