@@ -1,5 +1,18 @@
 #Requires -Version 5.1
 
+<#
+.SYNOPSIS
+    Build a environment for Windows.
+.DESCRIPTION
+    This script installs Scoop and some apps.
+    It also copies dotfiles and creates symbolic links.
+    This script is intended to be run on a new Windows environment.
+    This script requires administrator privilege.
+    This script is based on the following script.
+.LINK
+    https://github.com/takano536/dotfiles
+#>
+
 param()
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +30,15 @@ $psName = Split-Path $MyInvocation.InvocationName -Leaf
 Write-Verbose "$psName Start"
 
 ### main-process
+
+# write xdg-envs
+$xdgEnvs = @{
+    'XDG_CONFIG_HOME' = "$env:USERPROFILE\.config"
+    'XDG_CACHE_HOME'  = "$env:USERPROFILE\.cache"
+    'XDG_DATA_HOME'   = "$env:USERPROFILE\.local\share"
+    'XDG_STATE_HOME'  = "$env:USERPROFILE\.local\state"
+}
+$xdgEnvs.GetEnumerator() | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'User') }
 
 # install scoop
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -118,9 +140,29 @@ $shortcuts | ForEach-Object {
     if (Test-Path $shortcut) { Copy-Item $shortcut $shortcutDest -Force }
 }
 
-# link dotfiles
+# create startup shortcut
+$shortcuts = @{
+    'Discord.lnk'       = '--start-minimized'
+    'WingetUI.lnk'      = '--deamon'
+    'SmartTaskbar.lnk'  = ''
+    'Thunderbird.lnk'   = ''
+    'Rainmeter.lnk'     = ''
+    'TranslucentTB.lnk' = ''
+}
+$startupDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+$shortcuts.GetEnumerator() | ForEach-Object {
+    $wshShell = New-Object -ComObject WScript.Shell
+    $sh = New-Object -ComObject WScript.Shell
+    $target = $sh.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$($_.Key)").TargetPath
+    $workingDir = Get-Item $target | Select-Object -ExpandProperty DirectoryName
+    $shortcut = $wshShell.CreateShortcut("$startupDir\$($_.Key)")
+    $shortcut.TargetPath = $target
+    $shortcut.Arguments = [string]$_.Value
+    $shortcut.WorkingDirectory = $workingDir
+    $shortcut.Save()
+}
 
-# firefox
+# link dotfiles firefox
 $firefoxProfile = "$env:SCOOP\persist\firefox\profile"
 Set-Location $firefoxProfile
 (Get-ChildItem "$env:XDG_CONFIG_HOME\firefox").FullName | ForEach-Object {
@@ -149,6 +191,50 @@ New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
 Set-Location $wtProfile
 if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" -Force }
 sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\windows-terminal\settings.json"-Path "$wtProfile\settings.json" -Force
+
+# disable LocalizedResourceName
+$dirs = @(
+    "$env:USERPROFILE\Contacts",
+    "$env:USERPROFILE\Desktop",
+    "$env:USERPROFILE\Documents",
+    "$env:USERPROFILE\Downloads",
+    "$env:USERPROFILE\Favorites",
+    "$env:USERPROFILE\Links",
+    "$env:USERPROFILE\Music",
+    "$env:USERPROFILE\Pictures",
+    "$env:USERPROFILE\Saved Games",
+    "$env:USERPROFILE\Searches",
+    "$env:USERPROFILE\Videos",
+    "$env:APPDATA\Microsoft\Windows\AccountPictures",
+    "$env:APPDATA\Microsoft\Windows\Start Menu",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Accessibility",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Administrative Tools",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\System Tools",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup",
+    "$env:PUBLIC",
+    "$env:PUBLIC\AccountPictures",
+    "$env:PUBLIC\Documents",
+    "$env:PUBLIC\Downloads",
+    "$env:PUBLIC\Libraries",
+    "$env:PUBLIC\Music",
+    "$env:PUBLIC\Pictures",
+    "$env:PUBLIC\Videos"
+)
+$dirs | ForEach-Object { 
+    Copy-Item "$_\desktop.ini" "$_\desktop.ini.bak" -Force
+    (Get-Content $_\desktop.ini) | ForEach-Object {
+        $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
+    } | Set-Content $_\desktop.ini
+}
+
+$adminDirs = @(
+    "$env:PUBLIC\Desktop"
+    "$env:SystemDrive\Users"
+)
+$adminDirs | ForEach-Object { 
+    Write-Output "$_ is skipped"
+}
 
 ### post-process
 
