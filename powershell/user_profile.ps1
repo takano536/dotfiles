@@ -21,9 +21,9 @@ Set-Alias -Scope Global vim nvim
 
 ##### PSReadLineOption #####
 $importedModules = Get-Module
-if (Get-Module -Name 'PSReadLine' -ListAvailable -and !($importedModules.Name.Contains('PSReadLine'))) { Import-Module -Name PSReadLine }
-if (Get-Module -Name 'CompletionPredictor' -ListAvailable -and !($importedModules.Name.Contains('CompletionPredictor'))) { Import-Module -Name CompletionPredictor }
-if (Get-Module -Name 'PowerType' -ListAvailable -and !($importedModules.Name.Contains('PowerType'))) { Enable-PowerType }
+if ((Get-Module -Name 'PSReadLine' -ListAvailable) -and !($importedModules.Name.Contains('PSReadLine'))) { Import-Module -Name PSReadLine }
+if ((Get-Module -Name 'CompletionPredictor' -ListAvailable) -and !($importedModules.Name.Contains('CompletionPredictor'))) { Import-Module -Name CompletionPredictor }
+if ((Get-Module -Name 'PowerType' -ListAvailable) -and !($importedModules.Name.Contains('PowerType'))) { Enable-PowerType }
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin 
 Set-PSReadLineOption -PredictionViewStyle ListView
 Set-PSReadlineOption -HistoryNoDuplicates
@@ -155,7 +155,7 @@ Set-PSReadLineKeyHandler `
 }
 
 ##### Others #####
-if (Get-Module -Name 'z' -ListAvailable -and !($importedModules.Name.Contains('z'))) { Import-Module -Name z }
+if ((Get-Module -Name 'z' -ListAvailable) -and !($importedModules.Name.Contains('z'))) { Import-Module -Name z }
 
 if ($IsWindows) {
     & "$env:USERPROFILE/.config/powershell/windows_profile.ps1"
