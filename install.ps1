@@ -42,6 +42,7 @@ scoop bucket add games
 scoop install scoop-search
 scoop install wingetui
 scoop install gsudo
+scoop install pwsh
 
 sudo scoop install CascadiaCode-NF --global
 sudo scoop install vcredist dotnet3-sdk auto-dark-mode-np
