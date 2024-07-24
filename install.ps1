@@ -128,6 +128,7 @@ sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\powershell\Mic
 
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
 Set-Location $wtProfile
 if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" -Force }
 sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\windows-terminal\settings.json"-Path "$wtProfile\settings.json"
