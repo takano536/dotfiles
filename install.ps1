@@ -32,46 +32,63 @@ git clone https://github.com/takano536/dotfiles.git .config
 & "$env:USERPROFILE\.config\powershell\user_profile.ps1"
 
 # add buckets
-scoop bucket add extras
-scoop bucket add nonportable
-scoop bucket add nerd-fonts
-scoop bucket add versions
-scoop bucket add games
+$bucekts = @(
+    'extras',
+    'nonportable',
+    'nerd-fonts',
+    'versions',
+    'games'
+)
+$bucekts | ForEach-Object { scoop bucket add $_ }
 
-# install apps
-scoop install scoop-search
-scoop install wingetui
-scoop install gsudo
-scoop install pwsh
+# install global apps
+$globalApps = @(
+    'CascadeaCode-NF'
+)
+$globalApps | ForEach-Object { sudo scoop install $_ --global }
 
-sudo scoop install CascadiaCode-NF --global
-sudo scoop install vcredist dotnet3-sdk auto-dark-mode-np
+# install admin privilege apps
+$adminApps = @(
+    'vcredist',
+    'dotnet3-sdk',
+    'auto-dark-mode-np'
+)
+Invoke-Expression "sudo scoop install $adminApps"
 
-pwsh -Command Invoke-Expression "$env:USERPROFILE\.config\powershell\user_profile.ps1"; if ($?) { scoop install smarttaskbar }
-scoop install micaforeveryone
-scoop install translucenttb
-scoop install windynamicdesktop
-scoop install rainmeter
+# install normal apps
+$apps = @(
+    'scoop-search',
+    'wingetui',
+    'gsudo',
+    'pwsh',
+    
+    'smarttaskbar',
+    'micaforeveryone',
+    'translucenttb',
+    'windynamicdesktop',
+    'rainmeter',
+    
+    'firefox',
+    'firefoxpwa',
+    'thunderbird',
+    'youtube-music',
+    'discord',
+    
+    'xnconvert',
+    'losslesscut',
+    'gimp',
+    
+    'imagemagick',
+    'starship',
+    
+    'sublime-text',
+    'vscode',
+    'neovim',
 
-scoop install firefox
-scoop install firefoxpwa
-scoop install thunderbird
-scoop install youtube-music
-scoop install discord
-
-scoop install xnconvert
-scoop install losslesscut
-scoop install gimp
-
-scoop install imagemagick
-scoop install starship
-
-scoop install sublime-text
-scoop install vscode
-scoop install neovim
-
-scoop install opentabletdriver
-scoop install osulazer
+    'opentabletdriver',
+    'osulazer'
+)
+$apps | ForEach-Object { try { sudo scoop install $_ } catch { Write-Warning "Failed to install $_" } }
 
 # hide scoop start menu
 $shortcutDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps"
