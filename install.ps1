@@ -27,6 +27,7 @@ Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
 # copy dotfiles & load profile
 Set-Location $env:USERPROFILE
 scoop install git
+if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
 git clone https://github.com/takano536/dotfiles.git .config
 & "$USERPROFILE\.config\powershell\user_profile.ps1"
 
@@ -106,27 +107,27 @@ $firefoxProfile = "$env:SCOOP\persist\firefox\profile"
 Set-Location $firefoxProfile
 (Get-ChildItem "$env:XDG_CONFIG_HOME\firefox").FullName | ForEach-Object {
     $filename = (Get-Item $_).Name
-    if (Test-Path "$firefoxProfile\$filename") { Remove-Item "$firefoxProfile\$filename" }
+    if (Test-Path "$firefoxProfile\$filename") { Remove-Item "$firefoxProfile\$filename" -Recurse -Force }
     if ((Get-Item $_).PSIsContainer) { sudo ln -d $_ } else { sudo ln -s $_ }
 }
 
 # git-bash
 Set-Location $env:USERPROFILE
-if (Test-Path "$env:USERPROFILE\.bashrc") { Remove-Item "$env:USERPROFILE\.bashrc" }
+if (Test-Path "$env:USERPROFILE\.bashrc") { Remove-Item "$env:USERPROFILE\.bashrc" -Force }
 sudo ln -s "$env:XDG_CONFIG_HOME\git-bash\.bashrc" "$env:USERPROFILE\.bashrc"
 attrib +h "$env:USERPROFILE\.bashrc"
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
 Set-Location $pwshProfile
-if (Test-Path "$pwshProfile\Microsoft.PowerShell_profile.ps1") { Remove-Item "$pwshProfile\Microsoft.PowerShell_profile.ps1" }
+if (Test-Path "$pwshProfile\Microsoft.PowerShell_profile.ps1") { Remove-Item "$pwshProfile\Microsoft.PowerShell_profile.ps1" -Force }
 sudo ln -s "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" "$pwshProfile\Microsoft.PowerShell_profile.ps1"
 sudo ln -s "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" "$pwshProfile\Microsoft.VSCode_profile.ps1"
 
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
 Set-Location $wtProfile
-if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" }
+if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" -Force }
 sudo ln -s "$env:XDG_CONFIG_HOME\windows-terminal\settings.json" "$wtProfile\settings.json"
 
 ### post-process
