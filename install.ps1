@@ -47,7 +47,7 @@ scoop install pwsh
 sudo scoop install CascadiaCode-NF --global
 sudo scoop install vcredist dotnet3-sdk auto-dark-mode-np
 
-scoop install smarttaskbar
+pwsh -Command Invoke-Expression "$env:USERPROFILE\.config\powershell\user_profile.ps1"; if ($?) { scoop install smarttaskbar }
 scoop install micaforeveryone
 scoop install translucenttb
 scoop install windynamicdesktop
