@@ -5,10 +5,6 @@
 Set-Alias -Scope Global vi nvim
 Set-Alias -Scope Global vim nvim
 
-##### Env #####
-$env:LESSHISTFILE = "$env:XDG_CACHE_HOME\less\.lesshst"
-$env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
-
 ##### Install Modules #####
 $modules = @(
     'PSReadLine',
@@ -159,10 +155,9 @@ Set-PSReadLineKeyHandler `
 
 ##### Others #####
 if (!($importedModules.Name.Contains('z'))) { Import-Module -Name z }
-Invoke-Expression (&starship init powershell)
 
 if ($IsWindows) {
-    & "$HOME/.config/powershell/windows_profile.ps1"
+    & "$env:USERPROFILE/.config/powershell/windows_profile.ps1"
 }
 elseif ($IsLinux) {
     & "$HOME/.config/powershell/linux_profile.ps1"

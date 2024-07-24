@@ -16,10 +16,6 @@
             "keys": "ctrl+v"
         },
         {
-            "command": "find",
-            "keys": "ctrl+shift+f"
-        },
-        {
             "command": 
             {
                 "action": "splitPane",
@@ -27,6 +23,10 @@
                 "splitMode": "duplicate"
             },
             "keys": "alt+shift+d"
+        },
+        {
+            "command": "find",
+            "keys": "ctrl+shift+f"
         }
     ],
     "copyFormatting": "none",
@@ -49,7 +49,7 @@
             {
                 "face": "CaskaydiaCove Nerd Font"
             },
-            "opacity": 0,
+            "opacity": 50,
             "padding": "20",
             "unfocusedAppearance": {},
             "useAcrylic": true
@@ -60,6 +60,7 @@
                 "altGrAliasing": true,
                 "antialiasingMode": "grayscale",
                 "closeOnExit": "automatic",
+                "colorScheme": "tokyonight-storm",
                 "commandline": "%LOCALAPPDATA%\\Scoop\\shims\\pwsh.exe",
                 "cursorShape": "bar",
                 "font": 
@@ -71,6 +72,7 @@
                 "historySize": 9001,
                 "icon": "%LOCALAPPDATA%\\Scoop\\apps\\pwsh\\current\\pwsh.exe",
                 "name": "PowerShell 7",
+                "opacity": 50,
                 "snapOnInput": true,
                 "startingDirectory": "%USERPROFILE%"
             },
@@ -85,12 +87,6 @@
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
                 "name": "Command Prompt"
-            },
-            {
-                "guid": "{17bf3de4-5353-5709-bcf9-835bd952a95e}",
-                "hidden": false,
-                "name": "Ubuntu",
-                "source": "Windows.Terminal.Wsl"
             },
             {
                 "altGrAliasing": true,
@@ -111,16 +107,10 @@
                 "startingDirectory": "%USERPROFILE%"
             },
             {
-                "guid": "{48321fdc-2e11-5ee4-aa4b-36e35aaa5fd9}",
-                "hidden": true,
-                "name": "Developer Command Prompt for VS 2022",
-                "source": "Windows.Terminal.VisualStudio"
-            },
-            {
-                "guid": "{408303db-243d-5b77-b554-8049044afdaa}",
-                "hidden": true,
-                "name": "Developer PowerShell for VS 2022",
-                "source": "Windows.Terminal.VisualStudio"
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": false,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
             }
         ]
     },

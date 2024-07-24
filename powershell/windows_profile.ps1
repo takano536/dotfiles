@@ -1,3 +1,18 @@
+##### Env #####
+$env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
+$env:XDG_CONFIG_HOME = "$env:USERPROFILE\.config"
+$env:XDG_DATA_HOME = "$env:USERPROFILE\.local\share"
+$env:XDG_STATE_HOME = "$env:USERPROFILE\.local\state"
+
+$env:LESSHISTFILE = "$env:XDG_CACHE_HOME\less\.lesshst"
+$env:STARSHIP_CONFIG = "$env:XDG_CONFIG_HOME\starship\prompt.toml"
+
+$env:SCOOP = "$env:LOCALAPPDATA\Scoop"
+$env:SCOOP_HOME = $env:SCOOP
+$env:SCOOP_ROOT = $env:SCOOP
+
+$env:HOME = $env:USERPROFILE
+
 ##### Functions #####
 function Global:Get-Path ($command) {
     Get-Command $command -ErrorAction SilentlyContinue |
@@ -25,12 +40,6 @@ function Global:Invoke-As-Admin () {
 function Global:Get-DirItem () {
     Get-ChildItem $args | Format-Wide Name -AutoSize
 }
-function Global:Update-App ( [string]$app ) {
-    $workspaceDirpath = "$env:USERPROFILE\Documents\Python\app-get"
-    $pythonPath = "$workspaceDirpath\.app-get-venv\Scripts\python.exe"
-    $scriptPath = "$workspaceDirpath\appget.py"
-    & $pythonPath $scriptPath update $app
-}
 
 ##### Alias #####
 Set-Alias -Scope Global sudo Invoke-As-Admin
@@ -45,10 +54,10 @@ function Global:sha1sum { Get-FileHash $args -Algorithm SHA1 }
 function Global:sha256sum { Get-FileHash $args }
 function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
 function Global:ll { Get-ChildItem -force $args }
-function Global:appget { Update-App $args }
 
 ##### Modules #####
 if (-not (Get-Module -Name Terminal-Icons -ListAvailable)) {
     Install-Module -Name Terminal-Icons -Force -Scope CurrentUser
 }
 Import-Module -Name Terminal-Icons
+if (Test-Path $env:SCOOP\shims\starship.exe -PathType Leaf) { Invoke-Expression (&starship init powershell) }
