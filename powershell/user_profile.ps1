@@ -6,17 +6,18 @@ Set-Alias -Scope Global vi nvim
 Set-Alias -Scope Global vim nvim
 
 ##### Install Modules #####
-$modules = @(
-    'PSReadLine',
-    'CompletionPredictor',
-    'PowerType',
-    'z'
-)
-$modules | ForEach-Object {
-    if (-not (Get-Module -Name $_ -ListAvailable)) {
-        Install-Module -Name $_ -Force -Scope CurrentUser
-    }
-}
+# $modules = @(
+#     'PSReadLine',
+#     'CompletionPredictor',
+#     'PowerType',
+#     'Terminal-Icons',
+#     'z'
+# )
+# $modules | ForEach-Object {
+#     if (-not (Get-Module -Name $_ -ListAvailable)) {
+#         Install-Module -Name $_ -Force -Scope CurrentUser
+#     }
+# }
 
 ##### PSReadLineOption #####
 $importedModules = Get-Module
