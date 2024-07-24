@@ -157,7 +157,7 @@ Set-PSReadLineKeyHandler `
 ##### Others #####
 if ((Get-Module -Name 'z' -ListAvailable) -and !($importedModules.Name.Contains('z'))) { Import-Module -Name z }
 
-if ($IsWindows) {
+if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
     & "$env:USERPROFILE/.config/powershell/windows_profile.ps1"
 }
 elseif ($IsLinux) {
