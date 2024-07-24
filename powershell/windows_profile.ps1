@@ -56,5 +56,5 @@ function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
 function Global:ll { Get-ChildItem -force $args }
 
 ##### Modules #####
-if (Get-Module -Name 'Terminal-Icons' -ListAvailable -and !($importedModules.Name.Contains('Terminal-Icons'))) { Import-Module -Name Terminal-Icons }
+if ((Get-Module -Name 'Terminal-Icons' -ListAvailable) -and !((Get-Module).Name.Contains('Terminal-Icons'))) { Import-Module -Name Terminal-Icons }
 if (Test-Path $env:SCOOP\shims\starship.exe -PathType Leaf) { Invoke-Expression (&starship init powershell) }
