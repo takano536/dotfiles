@@ -6,26 +6,37 @@ Set-Alias -Scope Global vi nvim
 Set-Alias -Scope Global vim nvim
 
 ##### Install Modules #####
-# $modules = @(
-#     'PSReadLine',
-#     'CompletionPredictor',
-#     'PowerType',
-#     'Terminal-Icons',
-#     'z'
-# )
-# $modules | ForEach-Object {
-#     if (!(Get-Module -Name $_ -ListAvailable)) {
-#         Install-Module -Name $_ -Force -Scope CurrentUser
-#     }
-# }
+$modules = @{
+    'PSReadLine'          = 5.1
+    'CompletionPredictor' = 7.2
+    'PowerType'           = 7.2
+    'Terminal-Icons'      = 5.1
+    'z'                   = 3.0
+}
+$modules.GetEnumerator() | ForEach-Object {
+    if ($PSVersionTable.PSVersion -lt $_.Value) { continue }
+    $hasInstalled = Get-Module -Name $_.Key -ListAvailable
+    if (!$hasInstalled) { Install-Module -Name $_.Key -Force -Scope CurrentUser }
+}
+
+##### Import Modules #####
+$modules = @{
+    'PSReadLine'          = 'Import-Module -Name PSReadLine'
+    'CompletionPredictor' = 'Import-Module -Name CompletionPredictor'
+    'PowerType'           = 'Enable-PowerType'
+    'z'                   = 'Import-Module -Name z'
+}
+$modules.GetEnumerator() | ForEach-Object {
+    $isAvailable = Get-Module -Name $_.Key -ListAvailable
+    $hasImported = (Get-Module).Name.Contains($_.Key)
+    if ($isAvailable -and !$hasImported) { Invoke-Expression $_.Value }
+}
 
 ##### PSReadLineOption #####
-$importedModules = Get-Module
-if ((Get-Module -Name 'PSReadLine' -ListAvailable) -and !($importedModules.Name.Contains('PSReadLine'))) { Import-Module -Name PSReadLine }
-if ((Get-Module -Name 'CompletionPredictor' -ListAvailable) -and !($importedModules.Name.Contains('CompletionPredictor'))) { Import-Module -Name CompletionPredictor }
-if ((Get-Module -Name 'PowerType' -ListAvailable) -and !($importedModules.Name.Contains('PowerType'))) { Enable-PowerType }
-if ($PSVersionTable.PSVersion.Major -ge 7) { Set-PSReadLineOption -PredictionSource HistoryAndPlugin }
-if ($PSVersionTable.PSVersion.Major -ge 7) { Set-PSReadLineOption -PredictionViewStyle ListView }
+if ($PSVersionTable.PSVersion.Major -ge 7) { 
+    Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    Set-PSReadLineOption -PredictionViewStyle ListView
+}
 Set-PSReadlineOption -HistoryNoDuplicates
 Set-PSReadlineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
@@ -154,9 +165,7 @@ Set-PSReadLineKeyHandler `
     }
 }
 
-##### Others #####
-if ((Get-Module -Name 'z' -ListAvailable) -and !($importedModules.Name.Contains('z'))) { Import-Module -Name z }
-
+##### Load OS-specific profile #####
 if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
     & "$env:USERPROFILE/.config/powershell/windows_profile.ps1"
 }

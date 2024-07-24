@@ -42,8 +42,10 @@ function Global:Get-DirItem () {
 }
 
 ##### Alias #####
-if ($PSVersionTable.PSVersion.Major -ge 7) { Set-Alias -Scope Global wget Invoke-WebRequest }
-if ($PSVersionTable.PSVersion.Major -ge 7) { Set-Alias -Scope Global ls Get-DirItem }
+if ($PSVersionTable.PSVersion.Major -ge 7) { 
+    Set-Alias -Scope Global wget Invoke-WebRequest 
+    Set-Alias -Scope Global ls Get-DirItem
+}
 Set-Alias -Scope Global sudo Invoke-As-Admin
 Set-Alias -Scope Global touch New-Item
 Set-Alias -Scope Global which Get-Path
@@ -56,5 +58,12 @@ function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
 function Global:ll { Get-ChildItem -force $args }
 
 ##### Modules #####
-if ((Get-Module -Name 'Terminal-Icons' -ListAvailable) -and !((Get-Module).Name.Contains('Terminal-Icons'))) { Import-Module -Name Terminal-Icons }
+$modules = @{
+    'Terminal-Icons' = 'Import-Module -Name Terminal-Icons'
+}
+$modules.GetEnumerator() | ForEach-Object {
+    $isAvailable = Get-Module -Name $_.Key -ListAvailable
+    $hasImported = (Get-Module).Name.Contains($_.Key)
+    if ($isAvailable -and !$hasImported) { Invoke-Expression $_.Value }
+}
 if (Test-Path $env:SCOOP\shims\starship.exe -PathType Leaf) { Invoke-Expression (&starship init powershell) }
