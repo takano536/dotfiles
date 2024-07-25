@@ -97,6 +97,7 @@ $apps = @(
     'youtube-music',
     'discord',
     
+    'winfsp-np'
     'xnconvert',
     'losslesscut',
     'gimp',
