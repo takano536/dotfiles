@@ -71,9 +71,10 @@ $globalApps | ForEach-Object { sudo scoop install $_ --global }
 
 # install admin privilege apps
 $adminApps = @(
-    'vcredist',
-    'dotnet3-sdk',
-    'auto-dark-mode-np'
+    'auto-dark-mode-np',
+    'dotnet6-sdk', # for open-tablet-driver
+    'dotnet3-sdk', # for mica-for-everyone
+    'vcredist'
 )
 Invoke-Expression "sudo scoop install $adminApps"
 
