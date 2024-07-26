@@ -28,14 +28,15 @@ function Global:New-Link ([switch] $s, [switch] $j, [switch] $d, [string] $fileP
     elseif ($d) {
         cmd /c "mklink /d $symlink $filepath"
     }
-    else { 
+    else {
         New-Item -ItemType HardLink -Value $filePath -Path $symlink 
     }
 }
 function Global:Invoke-As-Admin () {
     if ($args.count -eq 0) { gsudo; return }
     $cmd = $args -Join ' '
-    gsudo "$PSHOME -Login -Command { $cmd }"
+    if (Test-Path "$PSHOME\pwsh.exe") { $psExe = "$PSHOME\pwsh.exe" } else { $psExe = "$PSHOME\powershell.exe" }
+    gsudo "$psExe -Login -Command { $cmd }"
 }
 function Global:Get-DirItem () {
     Get-ChildItem $args | Format-Wide Name -AutoSize
