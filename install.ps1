@@ -9,16 +9,94 @@
     This script is intended to be run on a new Windows environment.
     This script requires administrator privilege.
     This script is based on the following script.
+.PARAMETER ScoopDir
+    Specifies Scoop root path.
+    If not specified, Scoop will be installed to '$env:LOCALAPPDATA\scoop'.
+.PARAMETER NugetMinVersion
+    Specifies the minimum version of NuGet.
+    If not specified, version 2.8.5.201 will be installed.
+.PARAMETER NoSetEnvs
+    Specifies whether to set environment variables.
+    If specified, environment variables will not be set.
+.PARAMETER Debug
+    Specifies whether to output debug information.
+    If specified, debug information will be output.
 .LINK
     https://github.com/takano536/dotfiles
 #>
 
-param()
+param(
+    [string]$ScoopDir = "$env:LOCALAPPDATA\scoop",
+    [string]$NugetMinVersion = '2.8.5.201',
+    [switch]$NoSetEnvs,
+    [switch]$Debug
+)
 
 $ErrorActionPreference = 'Stop'
 $WarningPreference = 'Continue'
 $VerbosePreference = 'Continue'
-$DebugPreference = 'SilentlyContinue'
+if ($Debug) { $DebugPreference = 'Continue' } else { $DebugPreference = 'SilentlyContinue' }
+
+######################################################################
+### functions
+######################################################################
+
+function Set-EnvironmentVariable {
+    param(
+        [string]$Name,
+        [string]$Value,
+        [string]$Scope = 'User'
+    )
+
+    if (Test-Path variables:\$Name) { return }
+    [Environment]::SetEnvironmentVariable($Name, $Value, $Scope)
+    Write-Verbose "Set $Name to $Value for $Scope."
+}
+
+function Install-Scoop {
+    param(
+        [string]$Dir
+    )
+
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
+    if (!(Test-Path $env:TEMP)) { New-Item -Path $env:TEMP -ItemType Directory }
+    Set-Location $env:TEMP
+    Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
+    ./installScoop.ps1 -Dir $Dir
+    Write-Verbose 'Scoop has been installed.'
+}
+
+function New-Startup {
+    param(
+        [string]$TargetName,
+        [string]$Arguments
+    )
+
+    $wshShell = New-Object -ComObject WScript.Shell
+    $target = $wshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$TargetName").TargetPath
+    $workingDir = Get-Item $target | Select-Object -ExpandProperty DirectoryName
+    $shortcut = $wshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\$TargetName")
+    $shortcut.TargetPath = $target
+    $shortcut.Arguments = $Arguments
+    $shortcut.WorkingDirectory = $workingDir
+    $shortcut.Save()
+    Write-Verbose "Created a startup shortcut for $TargetName."
+}
+
+function New-Symlink {
+    param(
+        [string]$Target,
+        [string]$Link
+    )
+
+    if (Test-Path $Link) { Remove-Item $Link -Force }
+    if ((Get-Item $Target).PSIsContainer) { 
+        cmd /c "mklink /d $Link $Target"
+    }
+    else {
+        New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force
+    }
+}
 
 ######################################################################
 ### main-function
@@ -31,28 +109,41 @@ Write-Verbose "$psName Start"
 
 ### main-process
 
-# write xdg-envs
-$xdgEnvs = @{
+# Set Environment Variables
+$writeEnvs = @{
     'XDG_CONFIG_HOME' = "$env:USERPROFILE\.config"
     'XDG_CACHE_HOME'  = "$env:USERPROFILE\.cache"
     'XDG_DATA_HOME'   = "$env:USERPROFILE\.local\share"
     'XDG_STATE_HOME'  = "$env:USERPROFILE\.local\state"
+    'SCOOP'           = $ScoopDir
+    'SCOOP_HOME'      = $ScoopDir
+    'SCOOP_ROOT'      = $ScoopDir
 }
-$xdgEnvs.GetEnumerator() | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'User') }
+if (!$NoSetEnvs) {
+    $writeEnvs.GetEnumerator() | ForEach-Object { 
+        Set-EnvironmentVariable -Name $_.Key -Value $_.Value
+    }
+}
 
 # install scoop
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
-Set-Location $env:TEMP
-Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
-./installScoop.ps1 -ScoopDir $env:LOCALAPPDATA\Scoop
+try { if (!(Test-Path $ScoopDir)) { Install-Scoop -ScoopDir $ScoopDir } }
+catch { throw 'Failed to install Scoop' }
+
+# install mandatory apps
+$mandatoryApps = @(
+    'git',
+    'gsudo'
+)
+$mandatoryApps | ForEach-Object {
+    try { scoop install $_ } catch { throw "Failed to install $_" } 
+}
 
 # copy dotfiles & load profile
 Set-Location $env:USERPROFILE
-scoop install git
 if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
+Install-PackageProvider -Name NuGet -MinimumVersion $NugetMinVersion -Force
 git clone https://github.com/takano536/dotfiles.git .config
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-& "$env:USERPROFILE\.config\powershell\user_profile.ps1"
+try { & "$env:USERPROFILE\.config\powershell\user_profile.ps1" } catch { throw 'Failed to load profile' }
 
 # add buckets
 $bucekts = @(
@@ -62,14 +153,17 @@ $bucekts = @(
     'versions',
     'games'
 )
-$bucekts | ForEach-Object { scoop bucket add $_ }
+$bucekts | ForEach-Object { 
+    try { scoop bucket add $_ } catch { Write-Warning "Failed to add $_" }
+}
 
 # install global apps
-try { scoop install gsudo } catch { throw  "Failed to install gsudo" } 
 $globalApps = @(
     'CascadeaCode-NF'
 )
-$globalApps | ForEach-Object { sudo scoop install $_ --global }
+$globalApps | ForEach-Object { 
+    try { sudo scoop install $_ --global } catch { Write-Warning 'Failed to install $_' }
+}
 
 # install admin privilege apps
 $adminApps = @(
@@ -113,7 +207,9 @@ $apps = @(
     'opentabletdriver',
     'osulazer'
 )
-$apps | ForEach-Object { try { scoop install $_ } catch { Write-Warning "Failed to install $_" } }
+$apps | ForEach-Object { 
+    try { scoop install $_ } catch { Write-Warning "Failed to install $_" }
+}
 
 # hide scoop start menu
 $shortcutDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps"
@@ -152,48 +248,41 @@ $shortcuts = @{
     'Rainmeter.lnk'     = ''
     'TranslucentTB.lnk' = ''
 }
-$startupDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
 $shortcuts.GetEnumerator() | ForEach-Object {
-    $wshShell = New-Object -ComObject WScript.Shell
-    $sh = New-Object -ComObject WScript.Shell
-    $target = $sh.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$($_.Key)").TargetPath
-    $workingDir = Get-Item $target | Select-Object -ExpandProperty DirectoryName
-    $shortcut = $wshShell.CreateShortcut("$startupDir\$($_.Key)")
-    $shortcut.TargetPath = $target
-    $shortcut.Arguments = [string]$_.Value
-    $shortcut.WorkingDirectory = $workingDir
-    $shortcut.Save()
+    New-Startup -TargetName $_.Key -Arguments $_.Value
 }
 
 # link dotfiles firefox
 $firefoxProfile = "$env:SCOOP\persist\firefox\profile"
-Set-Location $firefoxProfile
-(Get-ChildItem "$env:XDG_CONFIG_HOME\firefox").FullName | ForEach-Object {
-    $filename = (Get-Item $_).Name
-    if (Test-Path "$firefoxProfile\$filename") { Remove-Item "$firefoxProfile\$filename" -Recurse -Force }
-    if ((Get-Item $_).PSIsContainer) { sudo cmd /c "mklink /d $filename $_" } else { sudo New-Item -ItemType SymbolicLink -Value $_ -Path $filename }
+if (Test-Path $firefoxProfile) {
+    (Get-ChildItem "$env:USERPROFILE\.config\firefox").FullName | ForEach-Object {
+        $target = (Get-Item $_).FullName
+        $link = "$firefoxProfile\$((Get-Item $_).Name)"
+        sudo New-Symlink -Target $target -Link $link
+    }
 }
 
 # git-bash
-Set-Location $env:USERPROFILE
-if (Test-Path "$env:USERPROFILE\.bashrc") { Remove-Item "$env:USERPROFILE\.bashrc" -Force }
-sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\git-bash\.bashrc" -Path "$env:USERPROFILE\.bashrc"
-attrib +h "$env:USERPROFILE\.bashrc"
+sudo New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc"
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
 New-Item $pwshProfile -ItemType Directory -ErrorAction SilentlyContinue
-Set-Location $pwshProfile
-if (Test-Path "$pwshProfile\Microsoft.PowerShell_profile.ps1") { Remove-Item "$pwshProfile\Microsoft.PowerShell_profile.ps1" -Force }
-sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" -Path "$pwshProfile\Microsoft.PowerShell_profile.ps1"
-sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\powershell\Microsoft.PowerShell_profile.ps1" -Path "$pwshProfile\Microsoft.VSCode_profile.ps1"
+$target = "$env:USERPROFILE\.config\powershell\Microsoft.PowerShell_profile.ps1"
+$profileNames = @(
+    'Microsoft.PowerShell_profile.ps1',
+    'Microsoft.VSCode_profile.ps1'
+)
+$profileNames | ForEach-Object {
+    sudo New-Symlink -Target $target -Link "$pwshProfile\$_"
+}
 
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
 New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
-Set-Location $wtProfile
-if (Test-Path "$wtProfile\settings.json") { Remove-Item "$wtProfile\settings.json" -Force }
-sudo New-Item -ItemType SymbolicLink -Value "$env:XDG_CONFIG_HOME\windows-terminal\settings.json"-Path "$wtProfile\settings.json" -Force
+$target = "$env:USERPROFILE\.config\windows-terminal\settings.json"
+$link = "$wtProfile\settings.json"
+sudo New-Symlink -Target $target -Link $link
 
 # disable LocalizedResourceName
 $dirs = @(
