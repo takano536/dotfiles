@@ -77,13 +77,18 @@ function New-Startup {
     )
 
     $wshShell = New-Object -ComObject WScript.Shell
+
+    $scoopShortcutPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$TargetName"
+    if (!(Test-Path $scoopShortcutPath)) { Write-Warning "$TargetName is not found."; return }
     $target = $wshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$TargetName").TargetPath
+    
     $workingDir = Get-Item $target | Select-Object -ExpandProperty DirectoryName
     $shortcut = $wshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\$TargetName")
     $shortcut.TargetPath = $target
     $shortcut.Arguments = $Arguments
     $shortcut.WorkingDirectory = $workingDir
     $shortcut.Save()
+    
     Write-Verbose "Created a startup shortcut for $TargetName."
 }
 
@@ -208,6 +213,7 @@ $apps = @(
     'vscode',
     'neovim',
 
+    'zadig-np', # for open-tablet-driver
     'opentabletdriver',
     'osulazer'
 )
@@ -241,6 +247,7 @@ $shortcuts | ForEach-Object {
     $shortcut = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$_"
     $shortcutDest = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\$_"
     if (Test-Path $shortcut) { Copy-Item $shortcut $shortcutDest -Force }
+    Write-Verbose "Copied $_ to $shortcutDest."
 }
 
 # create startup shortcut
