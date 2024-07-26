@@ -181,54 +181,54 @@ vimcmd_visual_symbol = '[](bold fg:color_vimvisual)'
 [c]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [elixir]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [elm]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [golang]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [haskell]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [java]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [julia]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [nodejs]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [rust]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [scala]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version) ]($style)'
+format = '[ $symbol( $version) ]($style)'
 
 [python]
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
-format = '[ $symbol ($version)( \($virtualenv\)) ]($style)'
+format = '[ $symbol( $version)( \($virtualenv\)) ]($style)'
