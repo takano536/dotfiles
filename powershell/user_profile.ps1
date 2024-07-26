@@ -6,6 +6,7 @@ Set-Alias -Scope Global vi nvim
 Set-Alias -Scope Global vim nvim
 
 ##### Install Modules #####
+if (!(Get-Module -ListAvailable -Name NuGet)) { Install-PackageProvider NuGet -Force -ForceBootstrap -Scope CurrentUser }
 $modules = @{
     'PSReadLine'          = 5.1
     'CompletionPredictor' = 7.2
