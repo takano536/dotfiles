@@ -166,7 +166,7 @@ $globalApps = @(
     'CascadeaCode-NF'
 )
 $globalApps | ForEach-Object { 
-    try { sudo scoop install $_ --global } catch { Write-Warning 'Failed to install $_' }
+    try { sudo { scoop install $_ --global } } catch { Write-Warning 'Failed to install $_' }
 }
 
 # install admin privilege apps
@@ -176,7 +176,7 @@ $adminApps = @(
     'dotnet3-sdk', # for mica-for-everyone
     'vcredist'
 )
-Invoke-Expression "sudo scoop install $adminApps"
+Invoke-Expression "sudo { scoop install $adminApps }"
 
 # install normal apps
 $apps = @(
@@ -262,12 +262,12 @@ if (Test-Path $firefoxProfile) {
     (Get-ChildItem "$env:USERPROFILE\.config\firefox").FullName | ForEach-Object {
         $target = (Get-Item $_).FullName
         $link = "$firefoxProfile\$((Get-Item $_).Name)"
-        sudo New-Symlink -Target $target -Link $link
+        sudo { New-Symlink -Target $target -Link $link }
     }
 }
 
 # git-bash
-sudo New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc"
+sudo { New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc" }
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
@@ -278,7 +278,7 @@ $profileNames = @(
     'Microsoft.VSCode_profile.ps1'
 )
 $profileNames | ForEach-Object {
-    sudo New-Symlink -Target $target -Link "$pwshProfile\$_"
+    sudo { New-Symlink -Target $target -Link "$pwshProfile\$_" }
 }
 
 # windows-terminal
@@ -286,7 +286,7 @@ $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe
 New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
 $target = "$env:USERPROFILE\.config\windows-terminal\settings.json"
 $link = "$wtProfile\settings.json"
-sudo New-Symlink -Target $target -Link $link
+sudo { New-Symlink -Target $target -Link $link }
 
 # disable LocalizedResourceName
 $dirs = @(

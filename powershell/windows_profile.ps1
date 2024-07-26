@@ -32,12 +32,6 @@ function Global:New-Link ([switch] $s, [switch] $j, [switch] $d, [string] $fileP
         New-Item -ItemType HardLink -Value $filePath -Path $symlink 
     }
 }
-function Global:Invoke-As-Admin () {
-    if ($args.count -eq 0) { gsudo; return }
-    $cmd = $args -Join ' '
-    if (Test-Path "$PSHOME\pwsh.exe") { $psExe = "$PSHOME\pwsh.exe" } else { $psExe = "$PSHOME\powershell.exe" }
-    gsudo "$psExe -Login -Command { $cmd }"
-}
 function Global:Get-DirItem () {
     Get-ChildItem $args | Format-Wide Name -AutoSize
 }
@@ -47,12 +41,11 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
     Set-Alias -Scope Global wget Invoke-WebRequest 
     Set-Alias -Scope Global ls Get-DirItem
 }
-Set-Alias -Scope Global sudo Invoke-As-Admin
 Set-Alias -Scope Global touch New-Item
 Set-Alias -Scope Global which Get-Path
 Set-Alias -Scope Global ln New-Link
 function Global:printenv { Get-ChildItem env: }
-function Global:md5sum { Get-FileHash $arg -Algorithm MD5 }
+function Global:md5sum { Get-FileHash $args -Algorithm MD5 }
 function Global:sha1sum { Get-FileHash $args -Algorithm SHA1 }
 function Global:sha256sum { Get-FileHash $args }
 function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
