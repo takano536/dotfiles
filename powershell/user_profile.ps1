@@ -13,8 +13,9 @@ $modules = @{
     'Terminal-Icons'      = 5.1
     'z'                   = 3.0
 }
+$PSVersion=$PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor -join '.'
 $modules.GetEnumerator() | ForEach-Object {
-    if ($PSVersionTable.PSVersion -lt $_.Value) { continue }
+    if ($PSVersion -lt $_.Value) { continue }
     $hasInstalled = Get-Module -Name $_.Key -ListAvailable
     if (!$hasInstalled) { Install-Module -Name $_.Key -Force -Scope CurrentUser }
 }
