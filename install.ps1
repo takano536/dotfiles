@@ -65,6 +65,7 @@ $bucekts = @(
 $bucekts | ForEach-Object { scoop bucket add $_ }
 
 # install global apps
+try { scoop install gsudo } catch { Write-Warning "Failed to install gsudo" } 
 $globalApps = @(
     'CascadeaCode-NF'
 )
@@ -83,7 +84,6 @@ Invoke-Expression "sudo scoop install $adminApps"
 $apps = @(
     'scoop-search',
     'wingetui',
-    'gsudo',
     'pwsh',
     
     'smarttaskbar',
@@ -113,7 +113,7 @@ $apps = @(
     'opentabletdriver',
     'osulazer'
 )
-$apps | ForEach-Object { try { sudo scoop install $_ } catch { Write-Warning "Failed to install $_" } }
+$apps | ForEach-Object { try { scoop install $_ } catch { Write-Warning "Failed to install $_" } }
 
 # hide scoop start menu
 $shortcutDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps"
