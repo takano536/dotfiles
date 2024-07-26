@@ -51,6 +51,7 @@ Set-Location $env:USERPROFILE
 scoop install git
 if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
 git clone https://github.com/takano536/dotfiles.git .config
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 & "$env:USERPROFILE\.config\powershell\user_profile.ps1"
 
 # add buckets
