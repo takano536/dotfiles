@@ -11,7 +11,7 @@ $modules = @{
     'CompletionPredictor' = 7.2
     'PowerType'           = 7.2
     'Terminal-Icons'      = 5.1
-    'z'                   = 3.0
+    'z'                   = 7.2
 }
 $PSVersion=$PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor -join '.'
 $modules.GetEnumerator() | ForEach-Object {
