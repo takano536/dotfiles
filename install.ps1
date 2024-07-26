@@ -163,7 +163,7 @@ $bucekts | ForEach-Object {
 
 # install global apps
 $globalApps = @(
-    'CascadeaCode-NF'
+    'CascadiaCode-NF'
 )
 $globalApps | ForEach-Object { 
     try { sudo { scoop install $_ --global } } catch { Write-Warning 'Failed to install $_' }
