@@ -65,7 +65,7 @@ $bucekts = @(
 $bucekts | ForEach-Object { scoop bucket add $_ }
 
 # install global apps
-try { scoop install gsudo } catch { Write-Warning "Failed to install gsudo" } 
+try { scoop install gsudo } catch { throw  "Failed to install gsudo" } 
 $globalApps = @(
     'CascadeaCode-NF'
 )
