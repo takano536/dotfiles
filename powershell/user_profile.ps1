@@ -15,7 +15,7 @@ $modules = @{
 }
 $PSVersion=$PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor -join '.'
 $modules.GetEnumerator() | ForEach-Object {
-    if ($PSVersion -lt $_.Value) { continue }
+    if ($PSVersion -lt $_.Value) { return }
     $hasInstalled = Get-Module -Name $_.Key -ListAvailable
     if (!$hasInstalled) { Install-Module -Name $_.Key -Force -Scope CurrentUser }
 }
