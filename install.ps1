@@ -18,7 +18,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $WarningPreference = 'Continue'
 $VerbosePreference = 'Continue'
-$DebugPreference = 'Continue'
+$DebugPreference = 'SilentlyContinue'
 
 ######################################################################
 ### main-function
