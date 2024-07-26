@@ -66,7 +66,7 @@ function Install-Scoop {
     if (!(Test-Path $env:TEMP)) { New-Item -Path $env:TEMP -ItemType Directory }
     Set-Location $env:TEMP
     Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
-    ./installScoop.ps1 -Dir $Dir
+    ./installScoop.ps1 -ScoopDir $Dir
     Write-Verbose 'Scoop has been installed.'
 }
 
