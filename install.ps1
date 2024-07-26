@@ -18,6 +18,9 @@
 .PARAMETER NoSetEnvs
     Specifies whether to set environment variables.
     If specified, environment variables will not be set.
+.PARAMETER NoDisableLocalizedName
+    Specifies whether to disable LocalizedResourceName.
+    If specified, LocalizedResourceName will not be disabled.
 .PARAMETER NoVerbose
     Specifies whether to output verbose information.
     If specified, verbose information will not be output.
@@ -32,6 +35,7 @@ param(
     [string]$ScoopDir = "$env:LOCALAPPDATA\Scoop",
     [string]$NugetMinVersion = '2.8.5.201',
     [switch]$NoSetEnvs,
+    [switch]$NoDisableLocalizedName,
     [switch]$NoVerbose,
     [switch]$Debug
 )
@@ -98,12 +102,14 @@ function New-Symlink {
         [string]$Link
     )
 
+    if (!(Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
+
     if (Test-Path $Link) { Remove-Item $Link -Force }
     if ((Get-Item $Target).PSIsContainer) { 
-        cmd /c "mklink /d $Link $Target"
+        sudo { cmd /c "mklink /d $Link $Target" }
     }
     else {
-        New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force
+        sudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
     }
 }
 
@@ -171,7 +177,7 @@ $globalApps = @(
     'CascadiaCode-NF'
 )
 $globalApps | ForEach-Object { 
-    try { sudo { scoop install $_ --global } } catch { Write-Warning 'Failed to install $_' }
+    try { sudo { scoop install $_ --global } } catch { Write-Warning "Failed to install $_" }
 }
 
 # install admin privilege apps
@@ -269,12 +275,12 @@ if (Test-Path $firefoxProfile) {
     (Get-ChildItem "$env:USERPROFILE\.config\firefox").FullName | ForEach-Object {
         $target = (Get-Item $_).FullName
         $link = "$firefoxProfile\$((Get-Item $_).Name)"
-        sudo { New-Symlink -Target $target -Link $link }
+        New-Symlink -Target $target -Link $link
     }
 }
 
 # git-bash
-sudo { New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc" }
+New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc"
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
@@ -285,7 +291,7 @@ $profileNames = @(
     'Microsoft.VSCode_profile.ps1'
 )
 $profileNames | ForEach-Object {
-    sudo { New-Symlink -Target $target -Link "$pwshProfile\$_" }
+    New-Symlink -Target $target -Link "$pwshProfile\$_"
 }
 
 # windows-terminal
@@ -293,7 +299,7 @@ $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe
 New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
 $target = "$env:USERPROFILE\.config\windows-terminal\settings.json"
 $link = "$wtProfile\settings.json"
-sudo { New-Symlink -Target $target -Link $link }
+New-Symlink -Target $target -Link $link
 
 # disable LocalizedResourceName
 $dirs = @(
@@ -329,6 +335,7 @@ $dirs | ForEach-Object {
     (Get-Content $_\desktop.ini) | ForEach-Object {
         $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
     } | Set-Content $_\desktop.ini
+    Write-Verbose "Disabled LocalizedResourceName in $_."
 }
 
 $adminDirs = @(
@@ -336,7 +343,7 @@ $adminDirs = @(
     "$env:SystemDrive\Users"
 )
 $adminDirs | ForEach-Object { 
-    Write-Output "$_ is skipped"
+    Write-Warning "$_ is skipped"
 }
 
 ### post-process
