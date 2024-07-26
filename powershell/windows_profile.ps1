@@ -35,7 +35,7 @@ function Global:New-Link ([switch] $s, [switch] $j, [switch] $d, [string] $fileP
 function Global:Invoke-As-Admin () {
     if ($args.count -eq 0) { gsudo; return }
     $cmd = $args -Join ' '
-    gsudo "pwsh.exe -Login -Command { $cmd }"
+    gsudo "$PSHOME -Login -Command { $cmd }"
 }
 function Global:Get-DirItem () {
     Get-ChildItem $args | Format-Wide Name -AutoSize
