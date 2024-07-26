@@ -41,7 +41,7 @@ $xdgEnvs = @{
 $xdgEnvs.GetEnumerator() | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Key, $_.Value, 'User') }
 
 # install scoop
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
 Set-Location $env:TEMP
 Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
 ./installScoop.ps1 -ScoopDir $env:LOCALAPPDATA\Scoop
