@@ -26,7 +26,7 @@
 #>
 
 param(
-    [string]$ScoopDir = "$env:LOCALAPPDATA\scoop",
+    [string]$ScoopDir = "$env:LOCALAPPDATA\Scoop",
     [string]$NugetMinVersion = '2.8.5.201',
     [switch]$NoSetEnvs,
     [switch]$Debug
@@ -126,7 +126,7 @@ if (!$NoSetEnvs) {
 }
 
 # install scoop
-try { if (!(Test-Path $ScoopDir)) { Install-Scoop -ScoopDir $ScoopDir } }
+try { if (!(Test-Path $ScoopDir)) { Install-Scoop -Dir $ScoopDir } }
 catch { throw 'Failed to install Scoop' }
 
 # install mandatory apps
