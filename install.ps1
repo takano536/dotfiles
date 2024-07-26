@@ -11,13 +11,16 @@
     This script is based on the following script.
 .PARAMETER ScoopDir
     Specifies Scoop root path.
-    If not specified, Scoop will be installed to '$env:LOCALAPPDATA\scoop'.
+    If not specified, Scoop will be installed to '$env:LOCALAPPDATA\Scoop'.
 .PARAMETER NugetMinVersion
     Specifies the minimum version of NuGet.
     If not specified, version 2.8.5.201 will be installed.
 .PARAMETER NoSetEnvs
     Specifies whether to set environment variables.
     If specified, environment variables will not be set.
+.PARAMETER NoVerbose
+    Specifies whether to output verbose information.
+    If specified, verbose information will not be output.
 .PARAMETER Debug
     Specifies whether to output debug information.
     If specified, debug information will be output.
@@ -29,12 +32,13 @@ param(
     [string]$ScoopDir = "$env:LOCALAPPDATA\Scoop",
     [string]$NugetMinVersion = '2.8.5.201',
     [switch]$NoSetEnvs,
+    [switch]$NoVerbose,
     [switch]$Debug
 )
 
 $ErrorActionPreference = 'Stop'
 $WarningPreference = 'Continue'
-$VerbosePreference = 'Continue'
+if (!$NoVerbose) { $VerbosePreference = 'Continue' } else { $VerbosePreference = 'SilentlyContinue' }
 if ($Debug) { $DebugPreference = 'Continue' } else { $DebugPreference = 'SilentlyContinue' }
 
 ######################################################################
