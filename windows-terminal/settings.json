@@ -1,11 +1,9 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
-    "actions": 
-    [
+    "actions": [
         {
-            "command": 
-            {
+            "command": {
                 "action": "copy",
                 "singleLine": false
             },
@@ -16,37 +14,32 @@
             "keys": "ctrl+v"
         },
         {
-            "command": 
-            {
+            "command": "find",
+            "keys": "ctrl+shift+f"
+        },
+        {
+            "command": {
                 "action": "splitPane",
                 "split": "auto",
                 "splitMode": "duplicate"
             },
             "keys": "alt+shift+d"
-        },
-        {
-            "command": "find",
-            "keys": "ctrl+shift+f"
         }
     ],
     "copyFormatting": "none",
     "copyOnSelect": false,
     "defaultProfile": "{57ca4728-4bcf-49cd-9ef3-a3449777ca48}",
-    "initialCols": 120,
-    "initialRows": 32,
-    "newTabMenu": 
-    [
+    "initialCols": 100,
+    "initialRows": 28,
+    "newTabMenu": [
         {
             "type": "remainingProfiles"
         }
     ],
-    "profiles": 
-    {
-        "defaults": 
-        {
+    "profiles": {
+        "defaults": {
             "colorScheme": "tokyonight-storm",
-            "font": 
-            {
+            "font": {
                 "face": "CaskaydiaCove Nerd Font"
             },
             "opacity": 50,
@@ -54,17 +47,14 @@
             "unfocusedAppearance": {},
             "useAcrylic": true
         },
-        "list": 
-        [
+        "list": [
             {
                 "altGrAliasing": true,
                 "antialiasingMode": "grayscale",
                 "closeOnExit": "automatic",
-                "colorScheme": "tokyonight-storm",
                 "commandline": "%LOCALAPPDATA%\\Scoop\\shims\\pwsh.exe",
                 "cursorShape": "bar",
-                "font": 
-                {
+                "font": {
                     "size": 12.0
                 },
                 "guid": "{57ca4728-4bcf-49cd-9ef3-a3449777ca48}",
@@ -72,7 +62,6 @@
                 "historySize": 9001,
                 "icon": "%LOCALAPPDATA%\\Scoop\\apps\\pwsh\\current\\pwsh.exe",
                 "name": "PowerShell 7",
-                "opacity": 50,
                 "snapOnInput": true,
                 "startingDirectory": "%USERPROFILE%"
             },
@@ -87,11 +76,45 @@
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
                 "name": "Command Prompt"
+            },
+            {
+                "guid": "{17bf3de4-5353-5709-bcf9-835bd952a95e}",
+                "hidden": false,
+                "name": "Ubuntu",
+                "source": "Windows.Terminal.Wsl"
+            },
+            {
+                "altGrAliasing": true,
+                "antialiasingMode": "grayscale",
+                "closeOnExit": "automatic",
+                "commandline": "%LOCALAPPDATA%\\Scoop\\apps\\git\\current\\bin\\bash.exe",
+                "cursorShape": "bar",
+                "font": {
+                    "size": 12.0
+                },
+                "guid": "{573aad76-4bca-4f48-ad40-b41436550d08}",
+                "hidden": false,
+                "historySize": 9001,
+                "icon": "%LOCALAPPDATA%\\Scoop\\apps\\git\\current\\mingw64\\share\\git\\git-for-windows.ico",
+                "name": "Git Bash",
+                "snapOnInput": true,
+                "startingDirectory": "%USERPROFILE%"
+            },
+            {
+                "guid": "{48321fdc-2e11-5ee4-aa4b-36e35aaa5fd9}",
+                "hidden": true,
+                "name": "Developer Command Prompt for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{408303db-243d-5b77-b554-8049044afdaa}",
+                "hidden": true,
+                "name": "Developer PowerShell for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
             }
         ]
     },
-    "schemes": 
-    [
+    "schemes": [
         {
             "background": "#0C0C0C",
             "black": "#0C0C0C",
