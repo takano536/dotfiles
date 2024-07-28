@@ -309,7 +309,6 @@ if (-not $NoDisableLocalizedName) {
         "$env:USERPROFILE\Saved Games",
         "$env:USERPROFILE\Searches",
         "$env:USERPROFILE\Videos",
-        "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch",
         "$env:APPDATA\Microsoft\Windows\AccountPictures",
         "$env:APPDATA\Microsoft\Windows\Start Menu",
         "$env:APPDATA\Microsoft\Windows\Start Menu\Programs",
