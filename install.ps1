@@ -332,7 +332,7 @@ if (-not $NoDisableLocalizedName) {
     $dirs | ForEach-Object {
         if (-not (Test-Path "$_\desktop.ini")) { Write-Warning "$_\desktop.ini is not found."; return }
         Copy-Item "$_\desktop.ini" "$_\desktop.ini.bak" -Force
-    (Get-Content $_\desktop.ini) | ForEach-Object {
+        (Get-Content $_\desktop.ini) | ForEach-Object {
             $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
         } | Set-Content $_\desktop.ini
         Write-Verbose "Disabled LocalizedResourceName in $_."
@@ -353,9 +353,11 @@ if (-not $NoDisableLocalizedName) {
         if (-not (Test-Path "$_\desktop.ini")) { Write-Warning "$_\desktop.ini is not found."; return }
         gsudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
         $dirpath = $_
-        (Get-Content $_\desktop.ini) | ForEach-Object {
-            gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' | Set-Content $args[1] } -args $dirpath, $dirpath\desktop.ini
-        }
+        gsudo { 
+            (Get-Content $_\desktop.ini) | ForEach-Object {
+                $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' 
+            } | Set-Content $args[1]
+        } -args $dirpath, $dirpath\desktop.ini
         Write-Verbose "Disabled LocalizedResourceName in $dirpath."
     }
 }
