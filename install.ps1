@@ -104,7 +104,7 @@ function New-Symlink {
 
     if (-not (Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
     if (Test-Path $Link) { Remove-Item $Link -Force }
-    gsudo { New-Item -ItemType SymbolicLink -Value $args[0] -Path $args[1] -Force > $null } -args $Target, $Link
+    gsudo { New-Item -ItemType SymbolicLink -Value $args[0] -Path $args[1] -Force | Out-Null } -args $Target, $Link
 
     Write-Verbose "Created a symbolic link from $Link to $Target."
 }
@@ -352,8 +352,9 @@ if (-not $NoDisableLocalizedName) {
     $adminDirs | ForEach-Object {
         if (-not (Test-Path "$_\desktop.ini")) { Write-Warning "$_\desktop.ini is not found."; return }
         gsudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
+        $dirpath = $_
         (Get-Content $_\desktop.ini) | ForEach-Object {
-            gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' | Set-Content $args[1] } -args $_, $_\desktop.ini
+            gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' | Set-Content $args[1] } -args $dirpath, $dirpath\desktop.ini
             Write-Verbose "Disabled LocalizedResourceName in $_."
         }
     }
