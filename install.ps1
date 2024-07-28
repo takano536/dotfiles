@@ -104,7 +104,7 @@ function New-Symlink {
 
     if (-not (Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
     if (Test-Path $Link) { Remove-Item $Link -Force }
-    gsudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
+    gsudo { New-Item -ItemType SymbolicLink -Value $args[0] -Path $args[1] -Force } -args $Target, $Link
 }
 
 ######################################################################
@@ -327,7 +327,8 @@ if (-not $NoDisableLocalizedName) {
         "$env:PUBLIC\Pictures",
         "$env:PUBLIC\Videos"
     )
-    $dirs | ForEach-Object { 
+    $dirs | ForEach-Object {
+        if (-not (Test-Path "$_\desktop.ini")) { Write-Warning "$_\desktop.ini is not found."; return }
         Copy-Item "$_\desktop.ini" "$_\desktop.ini.bak" -Force
     (Get-Content $_\desktop.ini) | ForEach-Object {
             $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
@@ -347,6 +348,7 @@ if (-not $NoDisableLocalizedName) {
         "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
     )
     $adminDirs | ForEach-Object {
+        if (-not (Test-Path "$_\desktop.ini")) { Write-Warning "$_\desktop.ini is not found."; return }
         gsudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
     (Get-Content $_\desktop.ini) | ForEach-Object {
             gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' } -args $_
