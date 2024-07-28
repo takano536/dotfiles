@@ -148,10 +148,10 @@ $mandatoryApps | ForEach-Object {
 }
 
 # copy dotfiles & load profile
-Set-Location $env:USERPROFILE
 if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
 Install-PackageProvider -Name NuGet -MinimumVersion $NugetMinVersion -Force
-git clone https://github.com/takano536/dotfiles.git .config
+git clone https://github.com/takano536/dotfiles.git $env:USERPROFILE\.config
+if (-not (Test-Path $env:USERPROFILE\.config)) { throw 'Failed to clone dotfiles' }
 
 # add buckets
 $bucekts = @(
