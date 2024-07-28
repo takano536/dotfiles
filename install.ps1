@@ -281,7 +281,7 @@ New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USER
 
 # pwsh
 $pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
-New-Item $pwshProfile -ItemType Directory -ErrorAction SilentlyContinue
+New-Item $pwshProfile -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 $target = "$env:USERPROFILE\.config\powershell\Microsoft.PowerShell_profile.ps1"
 $profileNames = @(
     'Microsoft.PowerShell_profile.ps1',
@@ -293,7 +293,7 @@ $profileNames | ForEach-Object {
 
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
-New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue
+New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 $target = "$env:USERPROFILE\.config\windows-terminal\settings.json"
 $link = "$wtProfile\settings.json"
 New-Symlink -Target $target -Link $link
@@ -355,8 +355,8 @@ if (-not $NoDisableLocalizedName) {
         $dirpath = $_
         (Get-Content $_\desktop.ini) | ForEach-Object {
             gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' | Set-Content $args[1] } -args $dirpath, $dirpath\desktop.ini
-            Write-Verbose "Disabled LocalizedResourceName in $_."
         }
+        Write-Verbose "Disabled LocalizedResourceName in $dirpath."
     }
 }
 ### post-process
