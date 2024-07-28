@@ -171,7 +171,7 @@ $globalApps = @(
     'CascadiaCode-NF'
 )
 $globalApps | ForEach-Object { 
-    try { sudo { scoop install $_ --global } } catch { Write-Warning "Failed to install $_" }
+    try { sudo { scoop install $args[0] --global } -args $_ } catch { Write-Warning "Failed to install $_" }
 }
 
 # install admin privilege apps
@@ -181,7 +181,9 @@ $adminApps = @(
     'dotnet3-sdk', # for mica-for-everyone
     'vcredist'
 )
-Invoke-Expression "sudo { scoop install $adminApps }"
+$adminApps | ForEach-Object { 
+    try { sudo { scoop install $args[0] } -args $_ } catch { Write-Warning "Failed to install $_" }
+}
 
 # install normal apps
 $apps = @(
