@@ -42,7 +42,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $WarningPreference = 'Continue'
-if (!$NoVerbose) { $VerbosePreference = 'Continue' } else { $VerbosePreference = 'SilentlyContinue' }
+if (-not $NoVerbose) { $VerbosePreference = 'Continue' } else { $VerbosePreference = 'SilentlyContinue' }
 if ($Debug) { $DebugPreference = 'Continue' } else { $DebugPreference = 'SilentlyContinue' }
 
 ######################################################################
@@ -67,7 +67,7 @@ function Install-Scoop {
     )
 
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
-    if (!(Test-Path $env:TEMP)) { New-Item -Path $env:TEMP -ItemType Directory }
+    if (-not (Test-Path $env:TEMP)) { New-Item -Path $env:TEMP -ItemType Directory }
     Set-Location $env:TEMP
     Invoke-WebRequest -UseBasicParsing get.scoop.sh -Outfile installScoop.ps1
     ./installScoop.ps1 -ScoopDir $Dir
@@ -83,7 +83,7 @@ function New-Startup {
     $wshShell = New-Object -ComObject WScript.Shell
 
     $scoopShortcutPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$TargetName"
-    if (!(Test-Path $scoopShortcutPath)) { Write-Warning "$TargetName is not found."; return }
+    if (-not (Test-Path $scoopShortcutPath)) { Write-Warning "$TargetName is not found."; return }
     $target = $wshShell.CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps\$TargetName").TargetPath
     
     $workingDir = Get-Item $target | Select-Object -ExpandProperty DirectoryName
@@ -102,15 +102,9 @@ function New-Symlink {
         [string]$Link
     )
 
-    if (!(Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
-
+    if (-not (Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
     if (Test-Path $Link) { Remove-Item $Link -Force }
-    if ((Get-Item $Target).PSIsContainer) { 
-        sudo { cmd /c "mklink /d $Link $Target" }
-    }
-    else {
-        sudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
-    }
+    sudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
 }
 
 ######################################################################
@@ -134,14 +128,14 @@ $writeEnvs = @{
     'SCOOP_HOME'      = $ScoopDir
     'SCOOP_ROOT'      = $ScoopDir
 }
-if (!$NoSetEnvs) {
+if (-not $NoSetEnvs) {
     $writeEnvs.GetEnumerator() | ForEach-Object { 
         Set-EnvironmentVariable -Name $_.Key -Value $_.Value
     }
 }
 
 # install scoop
-try { if (!(Test-Path $ScoopDir)) { Install-Scoop -Dir $ScoopDir } }
+try { if (-not (Test-Path $ScoopDir)) { Install-Scoop -Dir $ScoopDir } }
 catch { throw 'Failed to install Scoop' }
 
 # install mandatory apps
@@ -302,48 +296,63 @@ $link = "$wtProfile\settings.json"
 New-Symlink -Target $target -Link $link
 
 # disable LocalizedResourceName
-$dirs = @(
-    "$env:USERPROFILE\Contacts",
-    "$env:USERPROFILE\Desktop",
-    "$env:USERPROFILE\Documents",
-    "$env:USERPROFILE\Downloads",
-    "$env:USERPROFILE\Favorites",
-    "$env:USERPROFILE\Links",
-    "$env:USERPROFILE\Music",
-    "$env:USERPROFILE\Pictures",
-    "$env:USERPROFILE\Saved Games",
-    "$env:USERPROFILE\Searches",
-    "$env:USERPROFILE\Videos",
-    "$env:APPDATA\Microsoft\Windows\AccountPictures",
-    "$env:APPDATA\Microsoft\Windows\Start Menu",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Accessibility",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Administrative Tools",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\System Tools",
-    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup",
-    "$env:PUBLIC",
-    "$env:PUBLIC\AccountPictures",
-    "$env:PUBLIC\Documents",
-    "$env:PUBLIC\Downloads",
-    "$env:PUBLIC\Libraries",
-    "$env:PUBLIC\Music",
-    "$env:PUBLIC\Pictures",
-    "$env:PUBLIC\Videos"
-)
-$dirs | ForEach-Object { 
-    Copy-Item "$_\desktop.ini" "$_\desktop.ini.bak" -Force
+if (-not $NoDisableLocalizedName) {
+    $dirs = @(
+        "$env:USERPROFILE\Contacts",
+        "$env:USERPROFILE\Desktop",
+        "$env:USERPROFILE\Documents",
+        "$env:USERPROFILE\Downloads",
+        "$env:USERPROFILE\Favorites",
+        "$env:USERPROFILE\Links",
+        "$env:USERPROFILE\Music",
+        "$env:USERPROFILE\Pictures",
+        "$env:USERPROFILE\Saved Games",
+        "$env:USERPROFILE\Searches",
+        "$env:USERPROFILE\Videos",
+        "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch",
+        "$env:APPDATA\Microsoft\Windows\AccountPictures",
+        "$env:APPDATA\Microsoft\Windows\Start Menu",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Accessories",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Accessibility",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Administrative Tools",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\System Tools",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup",
+        "$env:PUBLIC",
+        "$env:PUBLIC\AccountPictures",
+        "$env:PUBLIC\Documents",
+        "$env:PUBLIC\Downloads",
+        "$env:PUBLIC\Libraries",
+        "$env:PUBLIC\Music",
+        "$env:PUBLIC\Pictures",
+        "$env:PUBLIC\Videos"
+    )
+    $dirs | ForEach-Object { 
+        Copy-Item "$_\desktop.ini" "$_\desktop.ini.bak" -Force
     (Get-Content $_\desktop.ini) | ForEach-Object {
-        $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
-    } | Set-Content $_\desktop.ini
-    Write-Verbose "Disabled LocalizedResourceName in $_."
-}
+            $_ -replace 'LocalizedResourceName=', ';LocalizedResourceName='
+        } | Set-Content $_\desktop.ini
+        Write-Verbose "Disabled LocalizedResourceName in $_."
+    }
 
-$adminDirs = @(
-    "$env:PUBLIC\Desktop"
-    "$env:SystemDrive\Users"
-)
-$adminDirs | ForEach-Object { 
-    Write-Warning "$_ is skipped"
+    $adminDirs = @(
+        "$env:PUBLIC\Desktop",
+        "$env:SystemDrive\Users",
+        "$env:ProgramData\Microsoft\Windows\Start Menu",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Accessories",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Accessibility",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
+    )
+    $adminDirs | ForEach-Object {
+        sudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
+    (Get-Content $_\desktop.ini) | ForEach-Object {
+            sudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' } -args $_
+        } | sudo { Set-Content $args[0] } -args $_\desktop.ini
+        Write-Verbose "Disabled LocalizedResourceName in $_."
+    }
 }
 
 ### post-process
