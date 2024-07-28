@@ -104,7 +104,7 @@ function New-Symlink {
 
     if (-not (Test-Path $ScoopDir\shims\sudo.exe)) { Write-Warning 'sudo is not found.'; return }
     if (Test-Path $Link) { Remove-Item $Link -Force }
-    sudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
+    gsudo { New-Item -ItemType SymbolicLink -Value $Target -Path $Link -Force }
 }
 
 ######################################################################
@@ -152,7 +152,6 @@ Set-Location $env:USERPROFILE
 if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
 Install-PackageProvider -Name NuGet -MinimumVersion $NugetMinVersion -Force
 git clone https://github.com/takano536/dotfiles.git .config
-try { & "$env:USERPROFILE\.config\powershell\user_profile.ps1" } catch { throw 'Failed to load profile' }
 
 # add buckets
 $bucekts = @(
@@ -171,7 +170,7 @@ $globalApps = @(
     'CascadiaCode-NF'
 )
 $globalApps | ForEach-Object { 
-    try { sudo { scoop install $args[0] --global } -args $_ } catch { Write-Warning "Failed to install $_" }
+    try { gsudo { scoop install $args[0] --global } -args $_ } catch { Write-Warning "Failed to install $_" }
 }
 
 # install admin privilege apps
@@ -182,7 +181,7 @@ $adminApps = @(
     'vcredist'
 )
 $adminApps | ForEach-Object { 
-    try { sudo { scoop install $args[0] } -args $_ } catch { Write-Warning "Failed to install $_" }
+    try { gsudo { scoop install $args[0] } -args $_ } catch { Write-Warning "Failed to install $_" }
 }
 
 # install normal apps
@@ -348,10 +347,10 @@ if (-not $NoDisableLocalizedName) {
         "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
     )
     $adminDirs | ForEach-Object {
-        sudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
+        gsudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
     (Get-Content $_\desktop.ini) | ForEach-Object {
-            sudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' } -args $_
-        } | sudo { Set-Content $args[0] } -args $_\desktop.ini
+            gsudo { $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' } -args $_
+        } | gsudo { Set-Content $args[0] } -args $_\desktop.ini
         Write-Verbose "Disabled LocalizedResourceName in $_."
     }
 }
