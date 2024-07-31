@@ -217,8 +217,7 @@ $apps = @(
     'neovim',
 
     'zadig-np', # for open-tablet-driver
-    'opentabletdriver',
-    'osulazer'
+    'opentabletdriver'
 )
 $apps | ForEach-Object { 
     try { scoop install $_ } catch { Write-Warning "Failed to install $_" }
