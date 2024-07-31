@@ -353,7 +353,7 @@ if (-not $NoDisableLocalizedName) {
         gsudo { Copy-Item $args[0] $args[1] -Force } -args "$_\desktop.ini", "$_\desktop.ini.bak"
         $dirpath = $_
         gsudo { 
-            (Get-Content $_\desktop.ini) | ForEach-Object {
+            (Get-Content $args[1]) | ForEach-Object {
                 $args[0] -replace 'LocalizedResourceName=', ';LocalizedResourceName=' 
             } | Set-Content $args[1]
         } -args $dirpath, $dirpath\desktop.ini
