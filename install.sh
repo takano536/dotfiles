@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
 reload_profile () {
@@ -55,7 +55,7 @@ done
 reload_profile
 
 # set zsh as default shell
-chsh -s $(which zsh)
+chsh $USER -s $(which zsh)
 
 # install asdf
 git clone https://github.com/asdf-vm/asdf.git $XDG_DATA_HOME/asdf
