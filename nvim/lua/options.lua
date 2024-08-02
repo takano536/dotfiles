@@ -35,9 +35,6 @@ local opts = {
 -- 上記のオプションをセット
 for k, v in pairs(opts) do vim.opt[k] = v end
 
--- カラースキーム
-vim.cmd[[ colorscheme tokyonight-storm ]]
-
 -- 背景色透明化
 vim.cmd[[ 
     highlight Normal      ctermbg=none guibg=none
