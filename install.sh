@@ -19,6 +19,7 @@ apps=(
     zsh
     gpg
     build-essential
+    gdb
     libssl-dev
     zlib1g-dev
     libbz2-dev
@@ -55,9 +56,6 @@ done
 
 # reload profile
 reload_profile
-
-# set zsh as default shell
-chsh $USER -s $(which zsh)
 
 # install asdf
 if [ ! -d "$XDG_DATA_HOME/asdf" ]; then
@@ -107,3 +105,5 @@ if ! type starship > /dev/null 2>&1; then
     curl -fsSL https://starship.rs/install.sh | sh
     reload_profile
 fi
+
+echo 'Done! Please enter [ chsh $USER -s $(which zsh) ] to change your shell to zsh. Then, restart your terminal.'
