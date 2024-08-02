@@ -223,6 +223,9 @@ $apps | ForEach-Object {
     try { scoop install $_ } catch { Write-Warning "Failed to install $_" }
 }
 
+# install neovim plugin manager
+git clone https://github.com/wbthomason/packer.nvim "$env:XDG_DATA_HOME\nvim-data\site\pack\packer\start\packer.nvim"
+
 # hide scoop start menu
 $shortcutDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Scoop Apps"
 if (Test-Path $shortcutDir) { attrib +h $shortcutDir }
