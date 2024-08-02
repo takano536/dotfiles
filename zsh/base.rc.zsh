@@ -47,6 +47,7 @@ setopt hist_ignore_all_dups  # ヒストリに追加されるコマンド行が�
 setopt hist_expand           # 補完時にヒストリを自動的に展開     
 setopt share_history         # シェルのプロセスごとに履歴を共有    
 setopt append_history        # 複数の zsh を同時に使う時など history ファイルに上書きせず追加
+setopt incappendhistory      # コマンドを打った直後に即座に履歴を保存
 
 # Others
 autoload -U colors && colors  # 色の有効化

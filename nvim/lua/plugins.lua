@@ -23,6 +23,20 @@ local plugs = {
 -- 高速化のため上記のプラグインを無効化
 for _, plug in ipairs(plugs) do vim.g[plug] = 1 end
 
+
+-- プラグインの自動インストール用関数
+local ensure_packer = function()
+    local fn = vim.fn
+    local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
+        vim.cmd [[packadd packer.nvim]]
+        return true
+    end
+    return false
+end
+local packer_bootstrap = ensure_packer()
+
 -- packerを使ってプラグインを読み込む
 vim.cmd [[ packadd packer.nvim ]]
 require('packer').startup(function(use)
@@ -44,6 +58,12 @@ require('packer').startup(function(use)
     use 'folke/noice.nvim'     -- コマンドパレット
     use 'MunifTanjim/nui.nvim' -- noice.nvimで必要
     use 'rcarriga/nvim-notify' -- noice.nvimで必要
+
+    -- Automatically set up your configuration after cloning packer.nvim
+    -- Put this at the end after all plugins
+    if packer_bootstrap then
+        require('packer').sync()
+    end
 
 end)
 

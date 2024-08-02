@@ -1,18 +1,15 @@
 # detect shell
-curr_shell=$(ps -p $$ | tail +2 | awk '{print $NF}') 
+current_shell=$(ps -p $$ | tail +2 | awk '{print $NF}') 
 
 # asdf
-if [[ -d "$XDG_DATA_HOME/asdf" ]]; then
-    . "$ASDF_DIR/asdf.sh"
-    if [[ $curr_shell == 'bash' ]]; then
-        . "$ASDF_DIR/completions/asdf.bash"
+if [ -d "$XDG_DATA_HOME/asdf" ]; then
+    source "$ASDF_DIR/asdf.sh"
+    if [ $current_shell = 'bash' ]; then
+        source "$ASDF_DIR/completions/asdf.bash"
     fi
 fi
 
-# rust
-if [[ -d "$XDG_DATA_HOME/cargo" ]]; then
-    . "$CARGO_HOME/env"
-fi
-
 # startship
-eval "$(starship init $curr_shell)"
+if type 'starship' > /dev/null 2>&1; then
+    eval "$(starship init $current_shell)"
+fi
