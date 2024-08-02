@@ -13,25 +13,25 @@ reload_profile () {
 sudo apt update && sudo apt upgrade -y
 
 # install apps
-apps=( \
-    git \
-    curl \
-    zsh \
-    gpg \
-    build-essential \
-    libssl-dev \
-    zlib1g-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libncursesw5-dev \
-    xz-utils \
-    tk-dev \
-    libxml2-dev \
-    libxmlsec1-dev \
-    libffi-dev \
-    liblzma-dev \
-    software-properties-common \
+apps=(
+    git
+    curl
+    zsh
+    gpg
+    build-essential
+    libssl-dev
+    zlib1g-dev
+    libbz2-dev
+    libreadline-dev
+    libsqlite3-dev
+    libncursesw5-dev
+    xz-utils
+    tk-dev
+    libxml2-dev
+    libxmlsec1-dev
+    libffi-dev
+    liblzma-dev
+    software-properties-common
 )
 for app in ${apps[@]}; do
     if ! type $app > /dev/null 2>&1; then sudo apt install -y $app; fi
@@ -41,11 +41,11 @@ done
 git clone https://github.com/takano536/dotfiles ~/.config
 
 # link profiles
-profiles=( \
-    ~/.config/bash/.bashrc \
-    ~/.config/bash/.bash_profile \
-    ~/.config/bash/.bash_logout \
-    ~/.config/zsh/.zshenv \
+profiles=(
+    ~/.config/bash/.bashrc
+    ~/.config/bash/.bash_profile
+    ~/.config/bash/.bash_logout
+    ~/.config/zsh/.zshenv
 )
 for profile in ${profiles[@]}; do
     ln -sf $profile ~/
@@ -62,17 +62,17 @@ git clone https://github.com/asdf-vm/asdf.git $XDG_DATA_HOME/asdf
 reload_profile
 
 # install asdf plugins
-plugins=( \
-    python \
+plugins=(
+    python
 )
 for plugin in ${plugins[@]}; do
     asdf plugin add $plugin
 done
 
 # install asdf python
-vers=( \
-    3.11.4 \
-    3.10.6 \
+vers=(
+    3.11.4
+    3.10.6
 )
 globalver=3.11.4
 for ver in ${vers[@]}; do
