@@ -38,7 +38,9 @@ for app in ${apps[@]}; do
 done
 
 # clone dotfiles
-git clone https://github.com/takano536/dotfiles ~/.config
+if [ ! -d "$XDG_DATA_HOME/asdf" ]; then
+    git clone https://github.com/takano536/dotfiles ~/.config
+fi
 
 # link profiles
 profiles=(
@@ -58,8 +60,10 @@ reload_profile
 chsh $USER -s $(which zsh)
 
 # install asdf
-git clone https://github.com/asdf-vm/asdf.git $XDG_DATA_HOME/asdf
-reload_profile
+if [ ! -d "$XDG_DATA_HOME/asdf" ]; then
+    git clone https://github.com/asdf-vm/asdf.git $XDG_DATA_HOME/asdf
+    reload_profile
+fi
 
 # install asdf plugins
 plugins=(
@@ -81,19 +85,25 @@ done
 asdf global python $globalver
 
 # install eza
-sudo mkdir -p /etc/apt/keyrings
-wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
-sudo apt update
-sudo apt install -y eza
+if ! type eza > /dev/null 2>&1; then
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    sudo apt update
+    sudo apt install -y eza
+fi
 
 # install neovim
-sudo add-apt-repository ppa:neovim-ppa/stable
-sudo apt update
-sudo apt install -y neovim
-git clone --depth 1 https://github.com/wbthomason/packer.nvim $XDG_DATA_HOME/nvim/site/pack/packer/start/packer.nvim
+if ! type nvim > /dev/null 2>&1; then
+    sudo add-apt-repository ppa:neovim-ppa/stable
+    sudo apt update
+    sudo apt install -y neovim
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim $XDG_DATA_HOME/nvim/site/pack/packer/start/packer.nvim
+fi
 
 # install starship
-curl -fsSL https://starship.rs/install.sh | sh
-reload_profile
+if ! type starship > /dev/null 2>&1; then
+    curl -fsSL https://starship.rs/install.sh | sh
+    reload_profile
+fi
