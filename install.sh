@@ -38,7 +38,7 @@ for app in ${apps[@]}; do
 done
 
 # clone dotfiles
-if [ ! -d "~/.config" ]; then
+if [ ! -d ~/.config ]; then
     git clone https://github.com/takano536/dotfiles ~/.config
 fi
 
