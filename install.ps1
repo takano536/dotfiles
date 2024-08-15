@@ -293,6 +293,11 @@ $profileNames | ForEach-Object {
     New-Symlink -Target $target -Link "$pwshProfile\$_"
 }
 
+# sublime-text
+$target = "$env:USERPROFILE\.config\sublime-text\Preferences.sublime-settings"
+$link = "$env:SCOOP\persist\sublime-text\Data\Packages\User\Preferences.sublime-settings"
+New-Symlink -Target $target -Link $link
+
 # windows-terminal
 $wtProfile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
 New-Item $wtProfile -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
