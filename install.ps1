@@ -188,6 +188,7 @@ $adminApps | ForEach-Object {
 
 # install normal apps
 $apps = @(
+    'innounp-unicode',
     'scoop-search',
     'wingetui',
     'pwsh',
