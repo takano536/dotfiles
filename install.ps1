@@ -189,6 +189,7 @@ $adminApps | ForEach-Object {
 # install normal apps
 $apps = @(
     'innounp-unicode',
+
     'scoop-search',
     'wingetui',
     'pwsh',
@@ -199,6 +200,7 @@ $apps = @(
     'windynamicdesktop',
     'rainmeter',
     
+    'bitwarden',
     'firefox',
     'firefoxpwa',
     'thunderbird',
@@ -233,6 +235,7 @@ if (Test-Path $shortcutDir) { attrib +h $shortcutDir }
 
 # copy shortcuts
 $shortcuts = @(
+    'Bitwarden.lnk',
     'Discord.lnk',
     'Firefox.lnk',
     'GIMP.lnk',
@@ -258,12 +261,13 @@ $shortcuts | ForEach-Object {
 
 # create startup shortcut
 $shortcuts = @{
+    'Bitwarden.lnk'     = ''
     'Discord.lnk'       = '--start-minimized'
-    'WingetUI.lnk'      = '--deamon'
+    'Rainmeter.lnk'     = ''
     'SmartTaskbar.lnk'  = ''
     'Thunderbird.lnk'   = ''
-    'Rainmeter.lnk'     = ''
     'TranslucentTB.lnk' = ''
+    'WingetUI.lnk'      = '--deamon'
 }
 $shortcuts.GetEnumerator() | ForEach-Object {
     New-Startup -TargetName $_.Key -Arguments $_.Value
