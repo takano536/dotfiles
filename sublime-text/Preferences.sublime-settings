@@ -9,13 +9,13 @@
 
 	// Theme
 	"theme": "auto",
-	"light_theme" : "ayu-light.sublime-theme",
-	"dark_theme"  : "ayu-mirage.sublime-theme",
+	"light_theme" : "Material-Theme-Lighter.sublime-theme",
+	"dark_theme"  : "Material-Theme-Palenight.sublime-theme",
 	
 	// Color scheme
 	"color_scheme": "auto",
 	"light_color_scheme" : "ayu-light.sublime-color-scheme",
-	"dark_color_scheme"  : "ayu-mirage.sublime-color-scheme",
+	"dark_color_scheme"  : "Packages/Material Theme/schemes/Material-Theme-Palenight.tmTheme",
 
 	// Material Accent
   	"material_theme_accent_acid-lime"   : true, // Set acid-lime accent color
