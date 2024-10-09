@@ -178,8 +178,6 @@ $globalApps | ForEach-Object {
 # install admin privilege apps
 $adminApps = @(
     'auto-dark-mode-np',
-    'dotnet6-sdk', # for open-tablet-driver
-    'dotnet3-sdk', # for mica-for-everyone
     'vcredist'
 )
 $adminApps | ForEach-Object { 
@@ -189,6 +187,10 @@ $adminApps | ForEach-Object {
 # install normal apps
 $apps = @(
     'innounp-unicode',
+
+    'dotnet-sdk',
+    'dotnet6-sdk', # for open-tablet-driver
+    'dotnet3-sdk', # for mica-for-everyone
 
     'scoop-search',
     'wingetui',
