@@ -1,5 +1,0 @@
-/* タブを中央寄せにする*/
-scrollbox[smoothscroll="true"] {
-  display: flex !important;
-  justify-content: center !important;
-}
