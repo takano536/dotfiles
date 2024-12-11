@@ -499,6 +499,9 @@
   margin-left: calc(var(--takano-tweak-tab-width) * -1) !important;
 }
 
+#sidebar-search-container {
+  visibility: collapse !important;
+}
 
 /*
   MARK: Rc Devtools
