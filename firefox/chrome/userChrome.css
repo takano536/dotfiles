@@ -277,10 +277,10 @@
   }
 }
 
-@-moz-document url(chrome://browser/content/syncedtabs/sidebar.xhtml){
-body {
-  background: transparent !important;
-}
+@-moz-document url(chrome://browser/content/syncedtabs/sidebar.xhtml) {
+  body {
+    background: transparent !important;
+  }
 }
 
 /*
@@ -292,12 +292,12 @@ body {
   /* `--newtab-background-color-secondary used` to differentiate between a dark
    * private window and private window with the 'Dark' theme enabled.
    * May not be the most reliable method, but works for now up to FF 123. */
-  :root[privatebrowsingmode="temporary"]:where([style*="--lwt-accent-color: rgb(28, 27, 34)"]:not([style*="--newtab-background-color-secondary: rgb(66, 65, 77)"])) {
+  :root[privatebrowsingmode="temporary"]:where([style*="--lwt-accent-color: rgb(28, 27, 34)"]: not([style*="--newtab-background-color-secondary: rgb(66, 65, 77)"])) {
     /* Used for mixing colours differently in light/dark themes. */
     --uc-tint: light-dark(black, white);
     /* Colour adjusted for readability. */
     --uc-accent-adjusted: light-dark(color-mix(in oklch, AccentColor 92%, black),
-        color-mix(in oklch, AccentColor 60%, white));
+      color-mix(in oklch, AccentColor 60%, white));
     /* Toolbars */
     --lwt-accent-color: light-dark(color-mix(in srgb, ActiveCaption 90%, black), ActiveCaption) !important;
     --lwt-accent-color-inactive: light-dark(color-mix(in srgb, InactiveCaption 94%, black), InactiveCaption) !important;
@@ -474,16 +474,31 @@ body {
 /*
   MARK: Rc Sidebar
 */
+:root {
+  --tab-width: 240px;
+}
+
 #sidebar-box {
   margin-inline-start: var(--uc-tweak-rounded-corners-padding) !important;
   margin-block-end: var(--uc-tweak-rounded-corners-padding) !important;
   border-radius: var(--uc-tweak-rounded-corners-radius) !important;
   overflow: hidden !important;
+  /*box-shadow: var(--uc-tweak-rounded-corners-shadow) !important;*/
+
+  /* 以下追加 */
+  position: relative !important;
+  overflow-x: hidden !important;
   box-shadow: var(--uc-tweak-rounded-corners-shadow) !important;
+  min-width: var(--tab-width) !important;
+  max-width: var(--tab-width) !important;
+  transition: all .1s ease;
+  margin-left: calc(var(--tab-width) * -1) !important;
+  z-index: 2;
+  /* 追加終わり */
 
   &[positionend] {
-    margin-inline-start: 0 !important;
-    margin-inline-end: var(--uc-tweak-rounded-corners-padding) !important;
+    /*margin-inline-start: 0 !important;*/
+    /*margin-inline-end: var(--uc-tweak-rounded-corners-padding) !important;*/
   }
 }
 
@@ -1050,7 +1065,7 @@ treechildren::-moz-tree-indentation {
   }
 
   border-radius: 0 !important;
-  box-shadow: none !important;
+  /*  box-shadow: none !important;*/
 
   &:not([positionend]) {
     padding-inline-end: 3px;
