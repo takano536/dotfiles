@@ -474,33 +474,31 @@
 /*
   MARK: Rc Sidebar
 */
-:root {
-  --tab-width: 240px;
-}
-
 #sidebar-box {
   margin-inline-start: var(--uc-tweak-rounded-corners-padding) !important;
   margin-block-end: var(--uc-tweak-rounded-corners-padding) !important;
   border-radius: var(--uc-tweak-rounded-corners-radius) !important;
   overflow: hidden !important;
-  /*box-shadow: var(--uc-tweak-rounded-corners-shadow) !important;*/
+  box-shadow: var(--uc-tweak-rounded-corners-shadow) !important;
 
-  /* 以下追加 */
+  /*&[positionend] {
+    margin-inline-start: 0 !important;
+    margin-inline-end: var(--uc-tweak-rounded-corners-padding) !important;
+  }*/
+}
+
+/* 以下追加 */
+#sidebar-box {
+  --takano-tweak-tab-width: 240px;
   position: relative !important;
   overflow-x: hidden !important;
-  box-shadow: var(--uc-tweak-rounded-corners-shadow) !important;
-  min-width: var(--tab-width) !important;
-  max-width: var(--tab-width) !important;
+  min-width: var(--takano-tweak-tab-width) !important;
+  max-width: var(--takano-tweak-tab-width) !important;
   transition: all .1s ease;
-  margin-left: calc(var(--tab-width) * -1) !important;
   z-index: 2;
-  /* 追加終わり */
-
-  &[positionend] {
-    /*margin-inline-start: 0 !important;*/
-    /*margin-inline-end: var(--uc-tweak-rounded-corners-padding) !important;*/
-  }
+  margin-left: calc(var(--takano-tweak-tab-width) * -1) !important;
 }
+
 
 /*
   MARK: Rc Devtools
