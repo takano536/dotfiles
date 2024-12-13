@@ -499,9 +499,9 @@
   margin-left: calc(var(--takano-tweak-tab-width) * -1) !important;
 }
 
-#sidebar-search-container {
+/*#sidebar-search-container {
   visibility: collapse !important;
-}
+}*/
 
 /*
   MARK: Rc Devtools
@@ -700,7 +700,7 @@ treechildren::-moz-tree-indentation {
 }
 
 /* Shadow for navbar and tabs */
-:root,
+/*:root,
 :root .tabbrowser-tab {
   --uc-titlebar-shadow: none;
   --uc-tab-shadow-outline: rgb(0 0 0 / .11);
@@ -716,7 +716,7 @@ treechildren::-moz-tree-indentation {
   & #TabsToolbar {
     --tab-border-radius: 8px !important;
   }
-}
+}*/
 
 /* remove toolbar bg */
 #nav-bar,
@@ -725,7 +725,7 @@ treechildren::-moz-tree-indentation {
 }
 
 /* invert bottom corner radius for tabs */
-.tab-background {
+/*.tab-background {
   border-radius: var(--tab-border-radius) !important;
   outline-offset: 0px !important;
 
@@ -739,14 +739,13 @@ treechildren::-moz-tree-indentation {
   border: 1px solid var(--lwt-tab-line-color, var(--lwt-tabs-border-color, transparent)) !important;
   outline: 1px solid var(--uc-tab-shadow-outline) !important;
 
-  /* Fractional scaling adjustments (150%, 175%, etc.) */
   @media (1dppx < resolution < 2dppx) {
     outline-width: 1.5px !important;
   }
-}
+}*/
 
 /* adjust spacing of area above tabs */
-@media not (-moz-platform: macos) {
+/*@media not (-moz-platform: macos) {
   :root[sizemode="maximized"] {
     --uc-tab-top-margin: 4px !important;
   }
@@ -754,11 +753,11 @@ treechildren::-moz-tree-indentation {
 
 :root:is([inFullscreen], :not([tabsintitlebar])) {
   --uc-tab-top-margin: 4px !important;
-}
+}*/
 
 /* IMPORTANT: Adds padding and removes margin on top of tabs to allow user to
    * select it from the top edge of the window */
-#tabbrowser-tabs {
+/*#tabbrowser-tabs {
   margin-top: calc(var(--uc-tab-top-margin) - 4px) !important;
 
   & .tabbrowser-tab,
@@ -774,16 +773,16 @@ treechildren::-moz-tree-indentation {
   &~spacer {
     margin-top: 4px !important;
   }
-}
+}*/
 
 /* move tab shadow behind urlbar */
-.tabbrowser-tab[visuallyselected="true"],
+/*.tabbrowser-tab[visuallyselected="true"],
 #nav-bar {
   z-index: 2 !important;
-}
+}*/
 
 /* tab shadow adjustments */
-.tabbrowser-tab {
+/*.tabbrowser-tab {
   overflow-clip-margin: 8px !important;
 }
 
@@ -796,7 +795,7 @@ treechildren::-moz-tree-indentation {
 
 #tabbrowser-arrowscrollbox {
   margin-bottom: -8px !important;
-}
+}*/
 
 /*------------------------- tweaks/hide-tabs-bar.css -------------------------*/
 /*
