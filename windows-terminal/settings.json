@@ -89,6 +89,42 @@
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
                 "name": "Command Prompt"
+            },
+            {
+                "altGrAliasing": true,
+                "antialiasingMode": "grayscale",
+                "closeOnExit": "automatic",
+                "commandline": "%LOCALAPPDATA%\\Scoop\\apps\\cygwin\\current\\root\\Cygwin.bat",
+                "cursorShape": "bar",
+                "font": 
+                {
+                    "size": 12
+                },
+                "guid": "{dd55d8a2-df37-4360-8ead-ea098e883252}",
+                "hidden": false,
+                "historySize": 9001,
+                "icon": "%LOCALAPPDATA%\\Scoop\\apps\\cygwin\\current\\root\\Cygwin.ico",
+                "name": "Cygwin",
+                "snapOnInput": true,
+                "startingDirectory": "%USERPROFILE%"
+            },
+            {
+                "altGrAliasing": true,
+                "antialiasingMode": "grayscale",
+                "closeOnExit": "automatic",
+                "commandline": "cmd.exe /c \"set MSYSTEM=MSYS && set MSYS=winsymlinks:nativestrict && set MSYS2_PATH_TYPE=strict && %LOCALAPPDATA%\\Scoop\\apps\\msys2\\current\\usr\\bin\\bash.exe --login -i\"",
+                "cursorShape": "bar",
+                "font": 
+                {
+                    "size": 12
+                },
+                "guid": "{b87366f2-ef1b-43da-b0f7-04b7f2202be2}",
+                "hidden": false,
+                "historySize": 9001,
+                "icon": "%LOCALAPPDATA%\\Scoop\\apps\\msys2\\current\\msys2.ico",
+                "name": "Msys2",
+                "snapOnInput": true,
+                "startingDirectory": "%USERPROFILE%"
             }
         ]
     },

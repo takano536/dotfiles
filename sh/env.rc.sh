@@ -35,7 +35,7 @@ export LESSHISTFILE="$XDG_CACHE_HOME/less/history"
 export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship/prompt.toml"
 
 # shell history
-current_shell=$(ps -p $$ | tail +2 | awk '{print $NF}')
+current_shell=`basename "$(readlink "/proc/$$/exe")"`
 export HISTFILE="$XDG_CACHE_HOME/$current_shell/.${current_shell}_history"
 export HISTSIZE=100000
 export SAVEHIST=100000

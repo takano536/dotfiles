@@ -89,7 +89,7 @@
 	"caret_style"        : "blink",
 	
 	// Newline
-	"ensure_newline_at_eof_on_save" : true,
+	"ensure_newline_at_eof_on_save" : false,
 
 	// Indent
 	"tab_size"                 : 4,
@@ -120,6 +120,9 @@
 
 	// Ignore packages
 	"ignored_packages" : [
+		"HTML-CSS-JS Prettify",
+		"PowerShell",
 		"Vintage",
 	],
+
 }
