@@ -23,6 +23,11 @@ if [ -d "$XDG_DATA_HOME/asdf" ]; then
     export ASDF_CONFIG_FILE="$XDG_CONFIG_HOME/asdf/.asdfrc"
 fi
 
+# rust
+if [ -d "$XDG_DATA_HOME/cargo" ]; then
+    export PATH="$PATH:$XDG_DATA_HOME/cargo/bin"
+fi
+
 # neovim
 if [ -d '/opt/nvim-linux64' ]; then
     export PATH="$PATH:/opt/nvim-linux64/bin"
