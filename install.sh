@@ -17,6 +17,7 @@ apps=(
     git
     curl
     zsh
+    fish
     gpg
     build-essential
     gdb
