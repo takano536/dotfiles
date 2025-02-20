@@ -24,6 +24,8 @@ if [ -d "$XDG_DATA_HOME/asdf" ]; then
 fi
 
 # rust
+export CARGO_HOME="$XDG_DATA_HOME/cargo"
+export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
 if [ -d "$XDG_DATA_HOME/cargo" ]; then
     export PATH="$PATH:$XDG_DATA_HOME/cargo/bin"
 fi
