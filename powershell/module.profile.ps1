@@ -4,6 +4,7 @@ $activateCommands = @{
     'CompletionPredictor' = 'Import-Module -Name CompletionPredictor'
     'PowerType'           = 'Enable-PowerType'
     'z'                   = 'Import-Module -Name z'
+    'Terminal-Icons'      = 'if ($IsWindows) { Import-Module -Name Terminal-Icons }'
 }
 $activateCommands.GetEnumerator() | ForEach-Object {
     $isAvailable = Get-Module -Name $_.Key -ListAvailable
