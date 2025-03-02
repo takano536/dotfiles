@@ -62,7 +62,7 @@ else {
         }
     }
     function Global:Get-DirItem () {
-        Get-ChildItem $args | Format-Wide Name -AutoSize
+        Get-ChildItem $args | Format-Wide -AutoSize
     }
     function Global:Invoke-As-Admin {
         param(
@@ -86,6 +86,6 @@ else {
     function Global:md5sum { Get-FileHash $args -Algorithm MD5 }
     function Global:sha1sum { Get-FileHash $args -Algorithm SHA1 }
     function Global:sha256sum { Get-FileHash $args }
-    function Global:la { (Get-ChildItem -Force $args) | Format-Wide Name -AutoSize }
-    function Global:ll { Get-ChildItem -force $args }
+    function Global:la { Get-ChildItem -Force $args | Format-Wide -AutoSize }
+    function Global:ll { Get-ChildItem -Force $args }
 }
