@@ -1,31 +1,13 @@
-##### Set PowerShell to UTF-8 #####
-[console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding
-
-##### Alias #####
-Set-Alias -Scope Global vi nvim
-Set-Alias -Scope Global vim nvim
-
-##### Import Modules #####
-$activateCommands = @{
-    'PSReadLine'          = 'Import-Module -Name PSReadLine'
-    'CompletionPredictor' = 'Import-Module -Name CompletionPredictor'
-    'PowerType'           = 'Enable-PowerType'
-    'z'                   = 'Import-Module -Name z'
-}
-$activateCommands.GetEnumerator() | ForEach-Object {
-    $isAvailable = Get-Module -Name $_.Key -ListAvailable
-    $hasImported = (Get-Module).Name.Contains($_.Key)
-    if ($isAvailable -and !$hasImported) { Invoke-Expression $_.Value }
-}
-
 ##### PSReadLineOption #####
 if ($PSVersionTable.PSVersion.Major -ge 7) { 
     Set-PSReadLineOption -PredictionSource HistoryAndPlugin
     Set-PSReadLineOption -PredictionViewStyle ListView
 }
+
 Set-PSReadlineOption -HistoryNoDuplicates
 Set-PSReadlineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
 Set-PSReadLineKeyHandler `
     -Key "(", "{", "[" `
     -BriefDescription "InsertPairedBraces" `
@@ -63,6 +45,7 @@ Set-PSReadLineKeyHandler `
         [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($cursor - 1)
     }
 }
+
 Set-PSReadLineKeyHandler `
     -Key ")", "]", "}" `
     -BriefDescription "SmartCloseBraces" `
@@ -82,6 +65,7 @@ Set-PSReadLineKeyHandler `
         [Microsoft.PowerShell.PSConsoleReadLine]::Insert($key.KeyChar)
     }
 }
+
 Set-PSReadLineKeyHandler -Key "`"", "'" `
     -BriefDescription "smartQuotation" `
     -LongDescription "Put quotation marks and move the cursor between them or put marks around the selection" `
@@ -149,12 +133,4 @@ Set-PSReadLineKeyHandler `
             [Microsoft.PowerShell.PSConsoleReadLine]::BackwardDeleteChar($key, $arg)
         }
     }
-}
-
-##### Load OS-specific profile #####
-if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
-    & "$env:USERPROFILE/.config/powershell/windows_profile.ps1"
-}
-elseif ($IsLinux) {
-    & "$HOME/.config/powershell/linux_profile.ps1"
 }

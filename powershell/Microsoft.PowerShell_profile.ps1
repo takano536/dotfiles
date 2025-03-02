@@ -1,1 +1,1 @@
-& "$HOME\.config\powershell\user_profile.ps1"
+& "$HOME\.config\powershell\base.profile.ps1"

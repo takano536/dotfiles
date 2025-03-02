@@ -31,10 +31,4 @@ function Global:la { ls -a }
 function Global:l { ls -l1F }
 
 ##### App init #####
-if (Test-Path "$XDG_DATA_HOME/asdf") { . "$ASDF_DIR/asdf.ps1" }
-
-##### Starship #####
-$error.clear()
-try { Get-Command -All starship | Out-Null }
-catch {}
-if (!$error) { Invoke-Expression (&starship init powershell) }
+if (Test-Path "$XDG_DATA_HOME/asdf") { & "$ASDF_DIR/asdf.ps1" }

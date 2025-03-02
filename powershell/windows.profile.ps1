@@ -97,4 +97,4 @@ $activateCommands.GetEnumerator() | ForEach-Object {
     $hasImported = (Get-Module).Name.Contains($_.Key)
     if ($isAvailable -and !$hasImported) { Invoke-Expression $_.Value }
 }
-if (Test-Path $env:SCOOP\shims\starship.exe -PathType Leaf) { Invoke-Expression (&starship init powershell) }
+
