@@ -149,6 +149,21 @@ $mandatoryApps | ForEach-Object {
     try { scoop install $_ } catch { throw "Failed to install $_" } 
 }
 
+##### Install Modules #####
+$requiredVersions = @{
+    'PSReadLine'          = 5.1
+    'CompletionPredictor' = 7.2
+    'PowerType'           = 7.2
+    'Terminal-Icons'      = 5.1
+    'z'                   = 7.2
+}
+$psVersion = $PSVersionTable.PSVersion.Major, $PSVersionTable.PSVersion.Minor -join '.'
+$requiredVersions.GetEnumerator() | ForEach-Object {
+    if ($psVersion -lt $_.Value) { return }
+    $hasInstalled = Get-Module -Name $_.Key -ListAvailable
+    if (!$hasInstalled) { Install-Module -Name $_.Key -Force -Scope CurrentUser }
+}
+
 # copy dotfiles & load profile
 if (Test-Path "$env:USERPROFILE\.config") { Remove-Item "$env:USERPROFILE\.config" -Recurse -Force }
 Install-PackageProvider -Name NuGet -MinimumVersion $NugetMinVersion -Force

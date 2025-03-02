@@ -5,21 +5,6 @@
 Set-Alias -Scope Global vi nvim
 Set-Alias -Scope Global vim nvim
 
-##### Install Modules #####
-$requiredVersions = @{
-    'PSReadLine'          = 5.1
-    'CompletionPredictor' = 7.2
-    'PowerType'           = 7.2
-    'Terminal-Icons'      = 5.1
-    'z'                   = 7.2
-}
-$psVersion = $PSVersionTable.PSVersion.Major, $PSVersionTable.PSVersion.Minor -join '.'
-$requiredVersions.GetEnumerator() | ForEach-Object {
-    if ($psVersion -lt $_.Value) { return }
-    $hasInstalled = Get-Module -Name $_.Key -ListAvailable
-    if (!$hasInstalled) { Install-Module -Name $_.Key -Force -Scope CurrentUser }
-}
-
 ##### Import Modules #####
 $activateCommands = @{
     'PSReadLine'          = 'Import-Module -Name PSReadLine'

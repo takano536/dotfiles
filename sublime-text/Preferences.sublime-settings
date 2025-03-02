@@ -121,7 +121,6 @@
 	// Ignore packages
 	"ignored_packages" : [
 		"HTML-CSS-JS Prettify",
-		"PowerShell",
 		"Vintage",
 	],
 
