@@ -304,15 +304,18 @@ if (Test-Path $firefoxProfile) {
 New-Symlink -Target "$env:USERPROFILE\.config\git-bash\.bashrc" -Link "$env:USERPROFILE\.bashrc"
 
 # pwsh
-$pwshProfile = "$env:USERPROFILE\Documents\PowerShell"
-New-Item $pwshProfile -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+$pwshProfileRoot = "$env:USERPROFILE\Documents"
+New-Item "$pwshProfileRoot\PowerShell" -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+New-Item "$pwshProfileRoot\WindowsPowerShell" -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 $target = "$env:USERPROFILE\.config\powershell\Microsoft.PowerShell_profile.ps1"
 $profileNames = @(
-    'Microsoft.PowerShell_profile.ps1',
-    'Microsoft.VSCode_profile.ps1'
+    'PowerShell\Microsoft.PowerShell_profile.ps1',
+    'PowerShell\Microsoft.VSCode_profile.ps1',
+    'WindowsPowerShell\Microsoft.PowerShell_profile.ps1',
+    'WindowsPowerShell\Microsoft.VSCode_profile.ps1'
 )
 $profileNames | ForEach-Object {
-    New-Symlink -Target $target -Link "$pwshProfile\$_"
+    New-Symlink -Target $target -Link "$pwshProfileRoot\$_"
 }
 
 # sublime-text
