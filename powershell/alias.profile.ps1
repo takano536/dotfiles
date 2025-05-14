@@ -74,18 +74,15 @@ else {
         else { gsudo --loadProfile { Invoke-Expression $args[0] } -args ($args -join ' ') }
     }
 
-    if ($PSVersionTable.PSVersion.Major -ge 7) { 
-        Set-Alias -Scope Global wget Invoke-WebRequest 
-        Set-Alias -Scope Global ls Get-DirItem
-    }
     Set-Alias -Scope Global touch New-Item
     Set-Alias -Scope Global which Get-Path
     Set-Alias -Scope Global ln New-Link
     Set-Alias -Scope Global sudo Invoke-As-Admin
+    Set-Alias -Scope Global ls Get-DirItem -Option AllScope
+    function Global:la { Get-ChildItem -Force $args | Format-Wide -AutoSize }
+    function Global:ll { Get-ChildItem -Force $args }
     function Global:printenv { Get-ChildItem env: }
     function Global:md5sum { Get-FileHash $args -Algorithm MD5 }
     function Global:sha1sum { Get-FileHash $args -Algorithm SHA1 }
     function Global:sha256sum { Get-FileHash $args }
-    function Global:la { Get-ChildItem -Force $args | Format-Wide -AutoSize }
-    function Global:ll { Get-ChildItem -Force $args }
 }
