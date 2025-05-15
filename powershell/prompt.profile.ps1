@@ -1,4 +1,4 @@
-##### Starship #####
+﻿##### Starship #####
 $error.clear()
 Get-Command -All starship -ErrorAction SilentlyContinue | Out-Null
 if (!$error) { Invoke-Expression (& starship init powershell); return }
@@ -18,20 +18,32 @@ function Global:prompt {
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if ($isAdmin) { $user = 'Admin' }
 
-    # カレントディレクトリ ホームなら~に置き換え
-    $path = (Get-Location)
-    $shortPath = $path.Path.Replace([Environment]::GetFolderPath('UserProfile'), '~')
+    # パス
+    $shortPath = (Get-Location).Path.Replace([Environment]::GetFolderPath('UserProfile'), '~')
+    $pathElems = $shortPath -split '\\' | Where-Object { $_ -ne '' }
+    if ($pathElems.Count -gt 3) { $shortPathElems = @($pathElems[0]) + '...' + $pathElems[-2..-1] } else { $shortPathElems = $pathElems }
+    $path = ($shortPathElems -join ' -> ')
 
-    # 現在時刻
+    # 曜日と現在時刻
+    $weekday = [System.Globalization.CultureInfo]::InvariantCulture.DateTimeFormat.GetDayName((Get-Date).DayOfWeek)
     $time = (Get-Date).ToString('HH:mm')
+
+    # シェルバージョン
+    $ver = $PSVersionTable.PSVersion
+    $shellVersion = "$($ver.Major).$($ver.Minor)"
+    $shellText = "Posh v$shellVersion"
 
     # 1行目
     Write-Host ''
-    Write-Host $user -ForegroundColor Cyan -NoNewline
+    Write-Host $user -ForegroundColor Blue -NoNewline
     Write-Host ' in ' -NoNewline
-    Write-Host $shortPath -ForegroundColor DarkYellow -NoNewline
+    Write-Host "📁 $path" -ForegroundColor DarkYellow -NoNewline
+    Write-Host ' on ' -NoNewline
+    Write-Host "📅 $weekday" -ForegroundColor Cyan -NoNewline
     Write-Host ' at ' -NoNewline
-    Write-Host $time -ForegroundColor Magenta -NoNewline
+    Write-Host "⌚ $time" -ForegroundColor Magenta -NoNewline
+    Write-Host ' via ' -NoNewline
+    Write-Host "🚀 $shellText" -ForegroundColor DarkRed -NoNewline
     
     # 2行目
     Write-Host ''
