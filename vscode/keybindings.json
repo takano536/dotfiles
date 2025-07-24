@@ -1,0 +1,83 @@
+// 既定値を上書きするには、このファイル内にキー バインドを挿入します
+[
+    {
+        "key": "ctrl+alt+c",
+        "command": "-glassit.decrease"
+    },
+    {
+        "key": "ctrl+alt+c",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "python -u '${file}'\n"
+        },
+        "when": "resourceExtname == .py"
+    },
+    {
+        "key": "ctrl+alt+c",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "g++ -std=gnu++20 -I\"$HOME/.local/include\" -Wall -Wextra -O2 -D_DEBUG '${file}' -o '${fileDirname}/${fileBasenameNoExtension}.exe' && ${fileDirname}/${fileBasenameNoExtension}.exe\n"
+        },
+        "when": "resourceExtname == .cpp || resourceExtname == .c"
+    },
+    {
+        "key": "ctrl+alt+c",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "xclip -selection clipboard -o | node '${file}'\n"
+        },
+        "when": "isLinux && resourceExtname == .js"
+    },
+    {
+        "key": "ctrl+alt+c",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "pwsh -Command \"Get-Clipboard | node '${file}'\"\n"
+        },
+        "when": "isWindows && resourceExtname == .js"
+    },
+    {
+        "key": "ctrl+alt+n",
+        "command": "-code-runner.run"
+    },
+    {
+        "key": "ctrl+alt+p",
+        "command": "livePreview.start.preview.atFile"
+    },
+    {
+        "key": "alt+h",
+        "command": "-git.viewFileHistory"
+    },
+    {
+        "key": "ctrl+g ctrl+h",
+        "command": "git.viewHistory"
+    },
+    {
+        "key": "ctrl+alt+z",
+        "command": "-glassit.increase"
+    },
+    {
+        "key": "ctrl+alt+oem_plus",
+        "command": "glassit.increase"
+    },
+    {
+        "key": "ctrl+alt+x",
+        "command": "-glassit.minimize"
+    },
+    {
+        "key": "ctrl+alt+oem_minus",
+        "command": "glassit.decrease"
+    },
+    {
+        "key": "ctrl+n",
+        "command": "-workbench.action.files.newUntitledFile"
+    },
+    {
+        "key": "ctrl+n",
+        "command": "explorer.newFile"
+    },
+    {
+        "key": "ctrl+alt+n",
+        "command": "explorer.newFolder"
+    },
+]

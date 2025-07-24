@@ -1,0 +1,153 @@
+{
+    "workbench.colorTheme": "One Dark Pro",
+    "workbench.startupEditor": "none",
+    "workbench.iconTheme": "material-icon-theme",
+    "workbench.editor.empty.hint": "hidden",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "editor.guides.bracketPairs": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.fontFamily": "CaskaydiaCove NF, Meiryo UI",
+    "editor.tabSize": 4,
+    "editor.formatOnSave": true,
+    "editor.unicodeHighlight.ambiguousCharacters": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.fontSize": 14,
+    "editor.accessibilitySupport": "off",
+    "editor.fontLigatures": true,
+    "editor.inlineSuggest.enabled": true,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "explorer.confirmDragAndDrop": false,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "window.dialogStyle": "custom",
+    "window.titleBarStyle": "custom",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "security.workspace.trust.untrustedFiles": "open",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "settingsSync.keybindingsPerPlatform": false,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "remote.autoForwardPortsSource": "hybrid",
+    "remote.SSH.remotePlatform": {
+        "raspberrypi": "linux"
+    },
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "files.autoGuessEncoding": true,
+    "files.autoSave": "afterDelay",
+    "files.associations": {
+        "*.sublime-settings": "jsonl"
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/~$*": true,
+    },
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "git.suggestSmartCommit": false,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "git.useEditorAsCommitInput": false,
+    "git.openRepositoryInParentFolders": "never",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.defaultProfile.linux": "fish",
+    "terminal.integrated.enablePersistentSessions": false,
+    "terminal.integrated.enableMultiLinePasteWarning": "never",
+    "terminal.integrated.gpuAcceleration": "off",
+    "terminal.integrated.shellIntegration.enabled": false,
+    "terminal.integrated.shellIntegration.decorationsEnabled": "overviewRuler",
+    "terminal.integrated.fontFamily": "CaskaydiaCove NF, Meiryo UI",
+    "terminal.integrated.profiles.windows": {
+        "Command Prompt": {
+            "path": "${env:SystemRoot}\\System32\\cmd.exe",
+            "overrideName": true
+        },
+        "PowerShell": {
+            "path": "${env:LOCALAPPDATA}\\Scoop\\shims\\pwsh.exe",
+            "overrideName": true
+        }
+    },
+    "terminal.integrated.commandsToSkipShell": [
+        "matlab.interrupt"
+    ],
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "powershell.powerShellAdditionalExePaths": {
+        "PowerShell": "C:\\Users\\Takanori\\AppData\\Local\\Scoop\\shims\\pwsh.exe",
+    },
+    "powershell.powerShellDefaultVersion": "PowerShell",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+    },
+    "flake8.severity": {
+        "E": "Warning",
+        "F": "Warning"
+    },
+    "flake8.args": [
+        "--ignore=E501"
+    ],
+    "autopep8.args": [
+        "--max-line-length",
+        "300",
+    ],
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "[c]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "glassit.alpha": 220,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "vscord.ignore.workspaces": [
+        "Thesis",
+        "thesis"
+    ],
+    "vscord.app.name": "Visual Studio Code",
+    "vscord.status.state.text.editing": "Working on {folder_and_file}",
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": true,
+        "markdown": true,
+        "scminput": false
+    },
+    "github.copilot.editor.enableAutoCompletions": true,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "indentRainbow.indicatorStyle": "light",
+    "indentRainbow.ignoreErrorLanguages": [
+        "plaintext",
+        "markdown",
+        "cpp",
+    ],
+    "indentRainbow.lightIndicatorStyleLineWidth": 1,
+    "indentRainbow.colors": [
+        // for one-dark-pro
+        "rgba(209, 154, 102, 1.0)",
+        "rgba(198, 120, 221, 1.0)",
+        "rgba( 86, 182, 194, 1.0)",
+        // for tokyo-night-storm
+        //"rgba(122, 162, 247, 1.0)",
+        //"rgba(125, 207, 255, 1.0)",
+        //"rgba(187, 154, 247, 1.0)",
+        //"rgba( 42, 195, 222, 1.0)",
+        //"rgba(158, 206, 106, 1.0)",
+        //"rgba(255, 158, 100, 1.0)"
+    ],
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "markdown-preview-enhanced.previewTheme": "none.css",
+    "markdownlint.config": {
+        "MD033": false,
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "github.copilot.nextEditSuggestions.enabled": false,
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
+}
