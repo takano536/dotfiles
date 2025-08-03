@@ -6,7 +6,7 @@
     //--------------------------------------------------------------------------------------------------------------------------------------------------
     "editor.guides.bracketPairs": true,
     "editor.bracketPairColorization.enabled": true,
-    "editor.fontFamily": "CaskaydiaCove NF, Meiryo UI",
+    "editor.fontFamily": "CaskaydiaCove NF, BIZ UDGothic",
     "editor.tabSize": 4,
     "editor.formatOnSave": true,
     "editor.unicodeHighlight.ambiguousCharacters": false,
@@ -53,7 +53,7 @@
     "terminal.integrated.gpuAcceleration": "off",
     "terminal.integrated.shellIntegration.enabled": false,
     "terminal.integrated.shellIntegration.decorationsEnabled": "overviewRuler",
-    "terminal.integrated.fontFamily": "CaskaydiaCove NF, Meiryo UI",
+    "terminal.integrated.fontFamily": "CaskaydiaCove NF, BIZ UDGothic",
     "terminal.integrated.profiles.windows": {
         "Command Prompt": {
             "path": "${env:SystemRoot}\\System32\\cmd.exe",
