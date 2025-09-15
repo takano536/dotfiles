@@ -79,6 +79,7 @@ else {
     Set-Alias -Scope Global ln New-Link
     Set-Alias -Scope Global sudo Invoke-As-Admin
     Set-Alias -Scope Global ls Get-DirItem -Option AllScope
+    Set-Alias -Scope Global gemini $env:USERPROFILE\Documents\Repos\gemini-cli\node_modules\.bin\gemini.ps1
     function Global:la { Get-ChildItem -Force $args | Format-Wide -AutoSize }
     function Global:ll { Get-ChildItem -Force $args }
     function Global:printenv { Get-ChildItem env: }
