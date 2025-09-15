@@ -3,6 +3,7 @@
     "workbench.iconTheme": "material-icon-theme",
     "workbench.editor.empty.hint": "hidden",
     "workbench.colorTheme": "One Dark Pro",
+    "workbench.secondarySideBar.defaultVisibility": "hidden",
     //--------------------------------------------------------------------------------------------------------------------------------------------------
     "editor.guides.bracketPairs": true,
     "editor.bracketPairColorization.enabled": true,
@@ -109,13 +110,13 @@
     "vscord.app.name": "Visual Studio Code",
     "vscord.status.state.text.editing": "Working on {folder_and_file}",
     //--------------------------------------------------------------------------------------------------------------------------------------------------
+    "github.copilot.nextEditSuggestions.enabled": false,
     "github.copilot.enable": {
         "*": true,
         "plaintext": true,
-        "markdown": true,
+        "markdown": false,
         "scminput": false
     },
-    "github.copilot.editor.enableAutoCompletions": true,
     //--------------------------------------------------------------------------------------------------------------------------------------------------
     "indentRainbow.indicatorStyle": "light",
     "indentRainbow.ignoreErrorLanguages": [
@@ -142,10 +143,14 @@
     "markdownlint.config": {
         "MD033": false,
     },
+    "markdown.styles": [
+        "styles.css"
+    ],
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "github.copilot.nextEditSuggestions.enabled": false,
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },

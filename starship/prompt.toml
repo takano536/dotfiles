@@ -24,7 +24,9 @@ $rust\
 $scala\
 [](fg:bgcolor_language bg:bgcolor_clock)\
 $time\
-[ ](fg:bgcolor_clock)$line_break\
+[ ](fg:bgcolor_clock)\
+$cmd_duration\
+$line_break\
 $character\
 """
 
@@ -232,3 +234,10 @@ format = '[ $symbol( $version) ]($style)'
 symbol = ""
 style = "fg:fgcolor_language bg:bgcolor_language"
 format = '[ $symbol( $version)( \($virtualenv\)) ]($style)'
+
+[cmd_duration]
+disabled = false
+show_milliseconds = true
+format = " in $duration "
+show_notifications = false
+min_time_to_notify = 500
