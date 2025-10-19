@@ -2,23 +2,11 @@
 [
     {
         "key": "ctrl+alt+c",
-        "command": "-glassit.decrease"
-    },
-    {
-        "key": "ctrl+alt+c",
         "command": "workbench.action.terminal.sendSequence",
         "args": {
             "text": "python -u '${file}'\n"
         },
         "when": "resourceExtname == .py"
-    },
-    {
-        "key": "ctrl+alt+c",
-        "command": "workbench.action.terminal.sendSequence",
-        "args": {
-            "text": "g++ -std=gnu++20 -I\"$HOME/.local/include\" -Wall -Wextra -O2 -D_DEBUG '${file}' -o '${fileDirname}/${fileBasenameNoExtension}.exe' && ${fileDirname}/${fileBasenameNoExtension}.exe\n"
-        },
-        "when": "resourceExtname == .cpp || resourceExtname == .c"
     },
     {
         "key": "ctrl+alt+c",
@@ -37,8 +25,12 @@
         "when": "isWindows && resourceExtname == .js"
     },
     {
-        "key": "ctrl+alt+n",
-        "command": "-code-runner.run"
+        "key": "ctrl+alt+c",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "g++ -std=gnu++23 -I\"$HOME/.local/include\" -Wall -Wextra -O2 -D_DEBUG '${file}' -o '${fileDirname}/${fileBasenameNoExtension}.exe' && ${fileDirname}/${fileBasenameNoExtension}.exe\n"
+        },
+        "when": "config.workspace.keybindings.atcoder.enabled && (resourceExtname == .cpp || resourceExtname == .c)"
     },
     {
         "key": "ctrl+alt+p",
@@ -51,22 +43,6 @@
     {
         "key": "ctrl+g ctrl+h",
         "command": "git.viewHistory"
-    },
-    {
-        "key": "ctrl+alt+z",
-        "command": "-glassit.increase"
-    },
-    {
-        "key": "ctrl+alt+oem_plus",
-        "command": "glassit.increase"
-    },
-    {
-        "key": "ctrl+alt+x",
-        "command": "-glassit.minimize"
-    },
-    {
-        "key": "ctrl+alt+oem_minus",
-        "command": "glassit.decrease"
     },
     {
         "key": "ctrl+n",
