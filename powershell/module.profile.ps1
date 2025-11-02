@@ -6,8 +6,20 @@ $activateCommands = @{
     'z'                   = 'Import-Module -Name z'
     'Terminal-Icons'      = 'if ($IsWindows) { Import-Module -Name Terminal-Icons }'
 }
+$alternateCommands = @{
+    'z'                   = ". `"$PSScriptRoot\Funcs\Invoke-ZJump.ps1`""
+    'Terminal-Icons'      = ". `"$PSScriptRoot\Funcs\Show-EmojiChildItem.ps1`""
+}
 $activateCommands.GetEnumerator() | ForEach-Object {
-    $isAvailable = Get-Module -Name $_.Key -ListAvailable
-    $hasImported = (Get-Module).Name.Contains($_.Key)
-    if ($isAvailable -and !$hasImported) { Invoke-Expression $_.Value }
+    $name = $_.Key
+    $command = $_.Value
+    $isAvailable = Get-Module -Name $name -ListAvailable
+    $hasImported = (Get-Module).Name -contains $name
+
+    if ($isAvailable -and -not $hasImported) {
+        Invoke-Expression $command
+    }
+    elseif (-not $isAvailable -and $alternateCommands.ContainsKey($name)) {
+        Invoke-Expression $alternateCommands[$name]
+    }
 }

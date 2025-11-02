@@ -8,10 +8,10 @@ $scripts = New-Object System.Collections.Generic.List[string]
 
 ##### Add profiles #####
 $scripts.Add("$profHome/env.$profSuffix")        # Set environment variables
+$scripts.Add("$profHome/prompt.$profSuffix")     # Set prompt style
+$scripts.Add("$profHome/alias.$profSuffix")      # Set aliases
 $scripts.Add("$profHome/module.$profSuffix")     # Load modules
 $scripts.Add("$profHome/psreadline.$profSuffix") # Set PSReadLine options
-$scripts.Add("$profHome/alias.$profSuffix")      # Set aliases
-$scripts.Add("$profHome/prompt.$profSuffix")     # Set prompt style
 
 if ($IsMacOS) {} elseif ($IsLinux) { $osProfPath = "$profHome/linux.$profSuffix" } else { $osProfPath = "$profHome/windows.$profSuffix" }
 if (Test-Path variable:osProfPath) { $scripts.Add($osProfPath) } # Load OS-specific profiles

@@ -74,12 +74,11 @@ else {
         else { gsudo --loadProfile { Invoke-Expression $args[0] } -args ($args -join ' ') }
     }
 
-    Set-Alias -Scope Global touch New-Item
-    Set-Alias -Scope Global which Get-Path
-    Set-Alias -Scope Global ln New-Link
-    Set-Alias -Scope Global sudo Invoke-As-Admin
-    Set-Alias -Scope Global ls Get-DirItem -Option AllScope
-    Set-Alias -Scope Global gemini $env:USERPROFILE\Documents\Repos\gemini-cli\node_modules\.bin\gemini.ps1
+    Set-Alias -Scope Global -Name touch -Value New-Item
+    Set-Alias -Scope Global -Name which -Value Get-Path
+    Set-Alias -Scope Global -Name ln -Value New-Link
+    Set-Alias -Scope Global -Name sudo -Value Invoke-As-Admin
+    Set-Alias -Scope Global -Name ls -Value Get-DirItem -Option AllScope
     function Global:la { Get-ChildItem -Force $args | Format-Wide -AutoSize }
     function Global:ll { Get-ChildItem -Force $args }
     function Global:printenv { Get-ChildItem env: }

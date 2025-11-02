@@ -40,4 +40,6 @@ else {
     $env:SCOOP_ROOT = $env:SCOOP
 
     $env:HOME = $env:USERPROFILE
+
+    $env:PYTHONSTARTUP = "$env:XDG_CONFIG_HOME\python\.pythonrc"
 }
