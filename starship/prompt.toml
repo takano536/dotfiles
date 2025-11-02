@@ -24,13 +24,30 @@ $rust\
 $scala\
 [](fg:bgcolor_language bg:bgcolor_clock)\
 $time\
-[ ](fg:bgcolor_clock)\
+[ ](fg:bgcolor_clock)\
 $cmd_duration\
 $line_break\
 $character\
 """
 
-palette = 'tokyonight'
+palette = 'catppuccin_mocha'
+
+[palettes.catppuccin_mocha]
+bgcolor_username = '#f2cdcd'
+fgcolor_username = '#1e1e2e'
+bgcolor_directory = '#89b4fa'
+fgcolor_directory = '#1e1e2e'
+bgcolor_git = '#f9e2af'
+fgcolor_git = '#1e1e2e'
+bgcolor_language = '#f5e0dc'
+fgcolor_language = '#1e1e2e'
+bgcolor_clock = '#f5c2e7'
+fgcolor_clock = '#1e1e2e'
+color_success = '#a6e3a1'
+color_error = '#f38ba8'
+color_vimnolmal = '#a6e3a1'
+color_vimreplace = '#cba6f7'
+color_vimvisual = '#f9e2af'
 
 [palettes.tokyonight]
 bgcolor_username = '#a3aed2'
