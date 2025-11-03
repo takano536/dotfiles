@@ -162,7 +162,7 @@ disabled = false
 [hostname]
 ssh_only = true
 style = "fgcolor_username bg:bgcolor_username"
-format = '[ $hostname ]($style)'
+format = '[  $hostname ]($style)'
 disabled = false
 
 [directory]
