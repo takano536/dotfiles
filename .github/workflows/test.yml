@@ -94,6 +94,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check install.sh syntax
+        run: bash -n ./install.sh
+
+      - name: Lint install.sh (warnings and errors only)
+        # ShellCheck is preinstalled on the GitHub runner image.
+        run: shellcheck --severity=warning --shell=bash ./install.sh
+
+      - name: Test the Linux installer
+        # Plain bash, fake apt-get/sudo/curl/chezmoi, no package is installed.
+        # Runs as a non-root user, so the sudo handling is covered here.
+        run: bash ./tests/install.tests.sh
+
       - name: Install Pester and chezmoi
         shell: pwsh
         run: |
@@ -114,3 +126,34 @@ jobs:
           Import-Module Pester -RequiredVersion $env:PESTER_VERSION
           $result = Invoke-Pester -Path ./tests/Dotfiles.Tests.ps1 -Output Detailed -PassThru
           if ($result.FailedCount -gt 0) { exit 1 }
+
+  # One path through a real Debian 13 userland, because that is what install.sh
+  # officially supports. It still installs no package and applies nothing: the
+  # container only proves that the distribution gate and the plan work on the
+  # real /etc/os-release with the tools Debian ships out of the box.
+  debian:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show the userland under test
+        run: |
+          cat /etc/os-release
+          bash --version | head -n 1
+
+      - name: Check install.sh syntax
+        run: bash -n ./install.sh
+
+      - name: Test the Linux installer
+        run: bash ./tests/install.tests.sh
+
+      - name: Plan a bootstrap without changing anything
+        run: |
+          bash ./install.sh --dry-run
+          # A dry run must not install anything, so chezmoi must still be absent.
+          if command -v chezmoi >/dev/null 2>&1; then
+              echo '--dry-run installed chezmoi' >&2
+              exit 1
+          fi
