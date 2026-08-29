@@ -67,7 +67,29 @@ if vim.fn.has('win32') == 1 then
         cache_enabled = 0,
     }
 end
+-- SSH/TUI clipboard
 if vim.env.SSH_TTY then
-    vim.g.clipboard = 'osc52'
-end
+  vim.opt.clipboard = ""
 
+  local osc52 = require("vim.ui.clipboard.osc52")
+
+  vim.g.clipboard = {
+    name = "OSC 52 copy",
+    copy = {
+      ["+"] = osc52.copy("+"),
+      ["*"] = osc52.copy("*"),
+    },
+    paste = {
+      ["+"] = function()
+        return { {}, "v" }
+      end,
+      ["*"] = function()
+        return { {}, "v" }
+      end,
+    },
+  }
+
+  -- Yank -> local terminal clipboard
+  vim.keymap.set({ "n", "x" }, "y", '"+y')
+  vim.keymap.set("n", "Y", '"+Y')
+end
