@@ -1,0 +1,116 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pester 5 runs on Windows PowerShell 5.1 and PowerShell 7.
+  PESTER_VERSION: 5.9.1
+  # chezmoi is downloaded as a single binary: CI installs no package manager.
+  CHEZMOI_VERSION: 2.72.0
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
+              throw "install.ps1 is bootstrapped with Windows PowerShell 5.1, but this shell is $($PSVersionTable.PSVersion)."
+          }
+
+      - name: Install Pester for Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [Net.ServicePointManager]::SecurityProtocol =
+              [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser `
+              -Force -SkipPublisherCheck
+
+      - name: Install Pester for PowerShell 7
+        shell: pwsh
+        run: |
+          # The two editions have separate module paths.
+          $ErrorActionPreference = 'Stop'
+          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser `
+              -Force -SkipPublisherCheck
+
+      - name: Install chezmoi
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:CHEZMOI_VERSION
+          $target = Join-Path $env:RUNNER_TEMP 'chezmoi'
+          $archive = Join-Path $env:RUNNER_TEMP 'chezmoi.zip'
+          Invoke-WebRequest -UseBasicParsing -OutFile $archive -Uri `
+              "https://github.com/twpayne/chezmoi/releases/download/v$version/chezmoi_${version}_windows_amd64.zip"
+          Expand-Archive -LiteralPath $archive -DestinationPath $target -Force
+          $target | Out-File -Append -Encoding ascii -FilePath $env:GITHUB_PATH
+
+      - name: Test with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
+          $result = Invoke-Pester -Path ./tests -Output Detailed -PassThru
+          foreach ($test in $result.Failed) {
+              Write-Host "::error title=$($test.ExpandedName)::$($test.ErrorRecord.DisplayErrorMessage)"
+          }
+          if ($result.FailedCount -gt 0) { exit 1 }
+
+      - name: Test with PowerShell 7
+        if: always()
+        shell: pwsh
+        run: |
+          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
+          $result = Invoke-Pester -Path ./tests -Output Detailed -PassThru
+          foreach ($test in $result.Failed) {
+              Write-Host "::error title=$($test.ExpandedName)::$($test.ErrorRecord.DisplayErrorMessage)"
+          }
+          if ($result.FailedCount -gt 0) { exit 1 }
+
+      - name: Lint (errors only)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          $findings = @('./install.ps1', './tests') | ForEach-Object {
+              Invoke-ScriptAnalyzer -Path $_ -Recurse -Severity Error
+          }
+          $findings | Format-Table -AutoSize
+          if ($findings) { exit 1 }
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester and chezmoi
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser -Force
+          $version = $env:CHEZMOI_VERSION
+          $target = Join-Path $env:RUNNER_TEMP 'chezmoi'
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          $archive = Join-Path $env:RUNNER_TEMP 'chezmoi.tar.gz'
+          Invoke-WebRequest -OutFile $archive -Uri `
+              "https://github.com/twpayne/chezmoi/releases/download/v$version/chezmoi_${version}_linux_amd64.tar.gz"
+          tar -xzf $archive -C $target
+          $target | Out-File -Append -FilePath $env:GITHUB_PATH
+
+      - name: Smoke test the dotfiles
+        shell: pwsh
+        run: |
+          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
+          $result = Invoke-Pester -Path ./tests/Dotfiles.Tests.ps1 -Output Detailed -PassThru
+          if ($result.FailedCount -gt 0) { exit 1 }
