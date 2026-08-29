@@ -5,6 +5,8 @@ Documents/PowerShell/
 Documents/PowerShell/**
 Documents/WindowsPowerShell/
 Documents/WindowsPowerShell/**
+vimfiles/
+vimfiles/**
 {{- end }}
 
 {{- if eq .chezmoi.os "windows" }}
