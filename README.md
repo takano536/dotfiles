@@ -178,7 +178,8 @@ Linux は下の「セットアップ（Linux / Debian 13）」を参照（`insta
   `VERSION_ID=13` を正式サポート条件とする。それ以外では理由を表示して
   non-zero exit し、apt 前提の処理へ進まない（Ubuntu などへの汎用化はしない）
 - bash（Debian 標準）
-- 通常ユーザー（root ではない）。このリポジトリを clone または展開済み
+- 通常ユーザー（root ではない。`sudo ./install.sh` や root shell からの実行は拒否する）。
+  このリポジトリを clone または展開済み
 
 git / chezmoi は **事前に必要ない**（installer が導入する）。
 
@@ -191,16 +192,17 @@ bash ./install.sh
 `install.sh` の処理順:
 
 1. オプション解析（未知オプションは non-zero exit）
-2. リポジトリルートの解決（script 自身の位置から。`.chezmoiroot` と
+2. root 実行の拒否（`EUID == 0` なら理由を表示して exit 1）
+3. リポジトリルートの解決（script 自身の位置から。`.chezmoiroot` と
    `packages/linux.tsv` を検証。cwd に依存しない）
-3. ディストリビューション判定（`/etc/os-release`）
-4. package 定義の読み込みと検証
-5. Required パッケージの導入（`apt-get`）
-6. Optional パッケージの導入（`apt-get`）
-7. Required に失敗があればここで exit 1（`chezmoi apply` は行わない）
-8. chezmoi の確保（無ければ公式 release binary を `~/.local/bin` へ）
-9. `chezmoi init --apply --source <リポジトリのパス>`
-10. サマリ表示（present / installed / planned / optional failures / notes）
+4. ディストリビューション判定（`/etc/os-release`）
+5. package 定義の読み込みと検証
+6. Required パッケージの導入（`apt-get`）
+7. Optional パッケージの導入（`apt-get`）
+8. Required に失敗があればここで exit 1（`chezmoi apply` は行わない）
+9. chezmoi の確保（無ければ公式 release binary を `~/.local/bin` へ）
+10. `chezmoi init --apply --source <リポジトリのパス>`
+11. サマリ表示（present / installed / planned / optional failures / notes）
 
 **Package manager: apt only**
 
@@ -214,10 +216,17 @@ Required / Optional ごとに batch 実行する（batch が失敗した場合�
 
 **sudo は apt 操作時のみ**
 
-`sudo ./install.sh` で全体を実行しない。root なら `apt-get` をそのまま、非 root なら
-`sudo env DEBIAN_FRONTEND=noninteractive apt-get ...` として apt 操作にだけ sudo を
-使う。`chezmoi apply` は必ず実行ユーザーとして走る。導入すべき package があるのに
-非 root で sudo が無い場合は明確なエラーになる（全て導入済みなら sudo は不要）。
+`sudo ./install.sh` は使わない。root で起動した場合は起動直後に
+
+```text
+install.sh: do not run install.sh as root or with sudo. ...
+```
+
+と表示して exit 1 する（root の HOME へ chezmoi が書き込んだり、root 所有の
+ファイルが残るのを防ぐため）。apt 操作だけを
+`sudo env DEBIAN_FRONTEND=noninteractive apt-get ...` として実行し、
+`chezmoi apply` は必ず実行ユーザーとして走る。導入すべき package があるのに
+sudo が無い場合は明確なエラーになる（全て導入済みなら sudo は不要）。
 
 ### インストール対象
 
@@ -332,9 +341,12 @@ bash ./tests/install.tests.sh
 `chezmoi` と最小限の coreutils だけを置いた子プロセスとして、一時 HOME と注入した
 os-release で実行する（実 apt・実 HOME・ネットワークには一切触れない）。確認する
 contract は syntax、package 定義の schema、`--dry-run` / `--skip-*` の挙動、
-非対応ディストリビューション、`apt-get` や `sudo` の不在、Required / Optional の
-失敗時の扱い、chezmoi の exit code、冪等性、chezmoi の upstream 取得。
-`shellcheck` があれば `--severity=warning` で実行し、無ければ skip する。
+root 実行の拒否、package 定義ファイルの不在、非対応ディストリビューション、
+`apt-get` や `sudo` の不在、Required / Optional の失敗時の扱い、chezmoi の
+exit code、冪等性、chezmoi の upstream 取得。`shellcheck` があれば
+`--severity=warning` で実行し、無ければ skip する。root 実行の拒否は uid 0 が
+必要なため、非 root かつ user namespace が使えない環境では skip され、CI の
+debian job（container の既定 user が root）が実経路を確認する。
 
 設定値そのものはテストしない（色・keymap・alias・theme・パッケージ追加を変更しても
 `tests/` の修正は不要）。パッケージ名は `packages/windows.psd1` /
@@ -350,7 +362,9 @@ contract は syntax、package 定義の schema、`--dry-run` / `--skip-*` の挙
   runner に同梱）→ Linux installer test → dotfiles の smoke test
   （chezmoi apply/verify と shell/config parse）
 - debian（`ubuntu-latest` + `container: debian:13`）: 実 Debian 13 userland で
-  `bash -n install.sh` → Linux installer test → `install.sh --dry-run`
+  `bash -n install.sh` → root 実行が拒否されることを確認（container の既定は root）
+  → 非 root ユーザーを作成し、その user で Linux installer test と
+  `install.sh --dry-run`
 
 **CI does not install the full workstation package set.** Scoop bootstrap も
 `scoop install` も PSModules の実導入も行わず、Linux 側も

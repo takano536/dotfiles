@@ -8,9 +8,8 @@
 #     bash ./install.sh [--dry-run] [--skip-packages] [--skip-optional]
 #                       [--skip-chezmoi-install] [--help]
 #
-# Run it as the user the dotfiles belong to, never as 'sudo ./install.sh':
-# only the apt calls are elevated, so chezmoi writes into the right home
-# directory.
+# Run it as the user the dotfiles belong to; 'sudo ./install.sh' and a root
+# shell are refused. Only the apt calls are elevated, from inside the run.
 
 set -Eeuo pipefail
 
@@ -91,6 +90,15 @@ Options:
 EOF
 }
 
+# The dotfiles belong to a normal user: 'sudo ./install.sh' would let chezmoi
+# write into root's home directory and leave root-owned files behind. Only the
+# apt-get calls are elevated, from inside the run.
+reject_root() {
+    if ((EUID == 0)); then
+        die 'do not run install.sh as root or with sudo. Run it as the user who owns the dotfiles; the installer elevates only apt-get.'
+    fi
+}
+
 ##### Command line #####
 
 parse_args() {
@@ -139,8 +147,10 @@ resolve_repo() {
     fi
 
     package_file="$repo_root/packages/linux.tsv"
+    # Read on every run, including --skip-packages, because it also declares
+    # how chezmoi itself is bootstrapped.
     if [[ ! -f $package_file ]]; then
-        die "the package list '$package_file' was not found. Check out the repository again, or use --skip-packages to only apply the dotfiles."
+        die "the package list '$package_file' was not found. Check out the repository again."
     fi
 }
 
@@ -238,21 +248,18 @@ require_apt() {
     fi
 }
 
-# Only the apt calls are elevated. Resolved lazily, so a machine that already
-# has every package needs neither root nor sudo.
+# apt is the only elevated part of the run, so sudo is resolved lazily: a
+# machine that already has every package needs no sudo at all.
 require_apt_privileges() {
-    if ((EUID == 0)); then
-        return 0
-    fi
     if command -v sudo >/dev/null 2>&1; then
         apt_prefix=(sudo)
         return 0
     fi
     if ((dry_run)); then
-        note "sudo is not installed; a real run would need root or sudo for apt-get."
+        note 'sudo is not installed; a real run would need it for apt-get.'
         return 0
     fi
-    die "packages have to be installed, but this run is not root and sudo was not found. Install sudo (or run the apt-get commands as root) and try again."
+    die "packages have to be installed, but sudo was not found. Install sudo (https://wiki.debian.org/sudo) and try again."
 }
 
 run() {
@@ -504,6 +511,7 @@ print_summary() {
 
 main() {
     parse_args "$@"
+    reject_root
     resolve_repo
     require_supported_distro
     load_packages
@@ -513,11 +521,7 @@ main() {
     info "repository:   $repo_root"
     info "source:       $source_dir"
     info "packages:     $package_file"
-    if ((EUID == 0)); then
-        info "user:         root (apt-get runs without sudo)"
-    else
-        info "user:         ${USER:-uid $EUID} (only apt-get is run with sudo)"
-    fi
+    info "user:         ${USER:-uid $EUID} (only apt-get is run with sudo)"
     if ((dry_run)); then
         info 'dry run:      nothing is installed, downloaded or written'
     fi

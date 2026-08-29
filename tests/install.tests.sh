@@ -38,6 +38,7 @@ log_dir=''
 home_dir=''
 output=''
 status=0
+installer_prefix=()
 
 ##### Harness #####
 
@@ -131,6 +132,7 @@ tsv_field() {
 new_sandbox() {
     sandbox="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install-test.XXXXXX")"
     sandboxes+=("$sandbox")
+    installer_prefix=()
 
     # The repository copy has a space in its path so that quoting stays covered.
     repo="$sandbox/dot files"
@@ -322,10 +324,13 @@ fake_every_command() {
     done < <(tsv_field 4 '' '')
 }
 
+# installer_prefix runs install.sh through a wrapper, e.g. 'unshare -r' for the
+# root check.
 run_installer() {
     set +e
     output="$(
-        env -i \
+        ${installer_prefix[@]+"${installer_prefix[@]}"} \
+            env -i \
             PATH="$fake_bin:$sandbox/stub" \
             HOME="$home_dir" \
             USER='tester' \
@@ -565,6 +570,49 @@ test_skip_optional() {
 
 ##### Environment failures #####
 
+# install.sh has to refuse a root run. EUID is read-only in bash, so this needs
+# a real uid 0: either the suite itself runs as root, or an unprivileged user
+# namespace provides one. Where neither is available the test is skipped; the
+# debian CI job covers the real-root case.
+test_root_rejected() {
+    new_sandbox
+    standard_fakes
+
+    if ((EUID == 0)); then
+        installer_prefix=()
+    elif unshare --user --map-root-user true >/dev/null 2>&1; then
+        installer_prefix=(unshare --user --map-root-user)
+    else
+        skip 'not root and unprivileged user namespaces are unavailable'
+        return 0
+    fi
+
+    run_installer
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'root' 'the error message'
+    assert_contains "$output" 'sudo' 'the error message'
+    assert_empty "$(log_of apt-get)" 'the apt-get log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+    assert_empty "$(home_entries)" 'the sandbox home'
+}
+
+# The package definition is read on every run, --skip-packages included, so the
+# error must not suggest that flag as a way around a missing file.
+test_missing_package_file() {
+    new_sandbox
+    standard_fakes
+    rm -f "$repo/packages/linux.tsv"
+
+    run_installer
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'package list' 'the error message'
+    assert_not_contains "$output" '--skip-packages' 'the error message'
+
+    run_installer --skip-packages
+    assert_status_not 0 "$status"
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+}
+
 test_unsupported_distro() {
     new_sandbox
     standard_fakes
@@ -745,6 +793,8 @@ run_test 'a normal run installs the packages and applies chezmoi' test_normal_ru
 run_test 'a dry run changes nothing' test_dry_run
 run_test '--skip-packages goes straight to chezmoi' test_skip_packages
 run_test '--skip-optional installs the required packages only' test_skip_optional
+run_test 'a root run is refused' test_root_rejected
+run_test 'a missing package definition fails without suggesting --skip-packages' test_missing_package_file
 run_test 'another distribution fails before apt' test_unsupported_distro
 run_test 'another Debian release fails before apt' test_unsupported_debian_version
 run_test 'a missing apt-get fails' test_missing_apt
