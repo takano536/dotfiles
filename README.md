@@ -6,7 +6,8 @@ bootstrap installer。
 - `home/` … chezmoi の source state（`.chezmoiroot` でここが source directory になる）
 - `install.ps1` … Windows 用のセットアップスクリプト
 - `packages/windows.psd1` … `install.ps1` が導入するパッケージ定義
-- `tests/` … `install.ps1` と パッケージ定義の Pester テスト
+- `tests/` … installer の Pester テストと dotfiles の smoke テスト
+- `.github/workflows/test.yml` … CI（Windows / Linux の 2 job）
 
 ## セットアップ（Windows）
 
@@ -170,25 +171,43 @@ Linux / WSL では chezmoi を導入したうえで
 
 ## テスト
 
-[Pester](https://pester.dev/) 5 以降が必要。
+[Pester](https://pester.dev/) 5 が必要（`Install-Module Pester -Scope CurrentUser`）。
 
 ```powershell
-Install-Module Pester -Scope CurrentUser -MinimumVersion 5.0
 Invoke-Pester -Path .\tests
 ```
 
-テストは `install.ps1` を子プロセスとして実行する。`HOME` / `USERPROFILE` /
-`SCOOP` は一時ディレクトリ、`PATH` は fake executable のみ、`HTTPS_PROXY` は閉じた
-ポートを指すため、実際のホームディレクトリ・実際の Scoop・ネットワークには触れない。
-`chezmoi` が PATH にある場合は、一時ホームへ実際に適用する end-to-end テストも
-実行される（`-SkipPackages` 付き）。
+- installer の挙動: `tests/Install.Tests.ps1`（fake Scoop / fake chezmoi / 一時 HOME
+  で `install.ps1` を子プロセス実行）
+- chezmoi の展開と apply: `tests/Dotfiles.Tests.ps1`（一時 HOME へ
+  `chezmoi init --apply` して `chezmoi verify`）
+- PowerShell 5.1 互換の静的チェック
+- shell / config の軽量 smoke check（PowerShell・JSON・TOML の parse、`bash -n`、
+  fish・tmux は導入済みの場合のみ）
+
+設定値そのものはテストしない（色・keymap・alias・theme・パッケージ追加を変更しても
+`tests/` の修正は不要）。パッケージ名は `packages/windows.psd1` から読むため、
+Optional を 1 件追加してもテストは変更なしで通る。
+
+## CI
+
+`.github/workflows/test.yml` の 2 job のみ（`windows-latest` / `ubuntu-latest`）。
+
+- windows: Windows PowerShell 5.1 であることを確認 → Pester（5.1 と 7 の両方）→
+  PSScriptAnalyzer（Error のみ）
+- linux: dotfiles の smoke test（chezmoi apply/verify と shell/config parse）
+
+**CI does not install the full workstation package set.** Scoop bootstrap も
+`scoop install`（gcc / tree-sitter / Optional packages）も PSModules の実導入も
+行わない。パッケージ導入の流れは fake Scoop によるテストで検証し、実際の
+package manager・ネットワーク・manifest の可用性を CI の成否条件にしない。
+CI が入れるのはテスト自体に必要な Pester と chezmoi のバイナリだけ。
 
 Windows 実機での確認は次の順で行うとよい。
 
 ```powershell
-powershell.exe -NoProfile -Command "Invoke-Pester -Path .\tests"   # 5.1 でのテスト
-pwsh -NoProfile -Command "Invoke-Pester -Path .\tests"             # 7 でのテスト（任意）
+powershell.exe -NoProfile -Command "Invoke-Pester -Path .\tests"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -DryRun
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
-scoop list; chezmoi doctor                                         # 結果の確認
+scoop list; chezmoi doctor
 ```

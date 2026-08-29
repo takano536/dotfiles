@@ -20,10 +20,25 @@ $PowerShellExe = Join-Path $PSHOME $(
     }
 )
 
-$RealChezmoi = Get-Command 'chezmoi' -CommandType Application -ErrorAction SilentlyContinue |
-    Select-Object -First 1 -ExpandProperty Source
-$RealGit = Get-Command 'git' -CommandType Application -ErrorAction SilentlyContinue |
-    Select-Object -First 1 -ExpandProperty Source
+function Find-RealExecutable {
+    <#
+        Resolved at dot-source time so that -Skip conditions can use it during
+        Pester discovery. Tools that are missing are skipped, never installed.
+    #>
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Name
+    )
+
+    return Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty Source
+}
+
+$RealChezmoi = Find-RealExecutable 'chezmoi'
+$RealGit = Find-RealExecutable 'git'
+$RealBash = Find-RealExecutable 'bash'
+$RealFish = Find-RealExecutable 'fish'
+$RealTmux = Find-RealExecutable 'tmux'
 
 function New-Sandbox {
     <#
@@ -209,10 +224,9 @@ function New-FakePwsh {
     return New-FakeExecutable -Directory $shims -Name 'pwsh'
 }
 
-
-function Invoke-InstallScript {
+function Invoke-SandboxProcess {
     <#
-        Runs install.ps1 in a child process with a controlled environment and
+        Runs a program in a child process with a controlled environment and
         PATH. The environment of the test process itself is never modified,
         HOME/USERPROFILE and SCOOP point into the sandbox, and HTTPS_PROXY
         points at a closed port so that no test can reach the network.
@@ -221,9 +235,12 @@ function Invoke-InstallScript {
         [Parameter(Mandatory)]
         $Sandbox,
 
-        [string]$WorkingDirectory,
+        [Parameter(Mandatory)]
+        [string]$FilePath,
 
         [string[]]$Arguments = @(),
+
+        [string]$WorkingDirectory,
 
         [string[]]$PathEntries,
 
@@ -241,14 +258,10 @@ function Invoke-InstallScript {
     }
 
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $PowerShellExe
-    $startInfo.Arguments = (@(
-            '-NoLogo'
-            '-NoProfile'
-            '-NonInteractive'
-            '-ExecutionPolicy', 'Bypass'
-            '-File', ('"' + $Sandbox.Script + '"')
-        ) + $Arguments) -join ' '
+    $startInfo.FileName = $FilePath
+    $startInfo.Arguments = ($Arguments | ForEach-Object {
+            if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
+        }) -join ' '
     $startInfo.WorkingDirectory = $WorkingDirectory
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
@@ -264,6 +277,10 @@ function Invoke-InstallScript {
     $environment['USERPROFILE'] = $Sandbox.Home
     $environment['SCOOP'] = $Sandbox.Scoop
     $environment['XDG_CONFIG_HOME'] = Join-Path $Sandbox.Home '.config'
+    $environment['XDG_DATA_HOME'] = Join-Path $Sandbox.Home '.local/share'
+    # Outside the sandbox home, so that 'the home directory stayed empty'
+    # assertions are not defeated by a shell writing its own cache.
+    $environment['XDG_CACHE_HOME'] = Join-Path $Sandbox.Root 'cache'
     $environment['APPDATA'] = Join-Path $Sandbox.Home 'AppData\Roaming'
     $environment['LOCALAPPDATA'] = Join-Path $Sandbox.Home 'AppData\Local'
     $environment['HTTPS_PROXY'] = 'http://127.0.0.1:9'
@@ -281,4 +298,51 @@ function Invoke-InstallScript {
         StdOut   = $stdout
         StdErr   = $stderr
     }
+}
+
+function Invoke-InstallScript {
+    param(
+        [Parameter(Mandatory)]
+        $Sandbox,
+
+        [string]$WorkingDirectory,
+
+        [string[]]$Arguments = @(),
+
+        [string[]]$PathEntries,
+
+        [hashtable]$ExtraEnvironment = @{}
+    )
+
+    return Invoke-SandboxProcess -Sandbox $Sandbox -FilePath $PowerShellExe -Arguments (@(
+            '-NoLogo'
+            '-NoProfile'
+            '-NonInteractive'
+            '-ExecutionPolicy', 'Bypass'
+            '-File', $Sandbox.Script
+        ) + $Arguments) -WorkingDirectory $WorkingDirectory -PathEntries $PathEntries `
+        -ExtraEnvironment $ExtraEnvironment
+}
+
+function Invoke-SandboxChezmoi {
+    <#
+        Runs the real chezmoi against the sandbox home, so that chezmoi itself,
+        not a reimplementation of it, decides whether this source state applies.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        $Sandbox,
+
+        [Parameter(Mandatory)]
+        [string[]]$Arguments
+    )
+
+    $toolPath = @(Split-Path -Parent $RealChezmoi)
+    if ($RealGit) {
+        $toolPath += Split-Path -Parent $RealGit
+    }
+
+    return Invoke-SandboxProcess -Sandbox $Sandbox -FilePath $RealChezmoi `
+        -Arguments (@('--no-tty') + $Arguments) `
+        -PathEntries ($toolPath | Select-Object -Unique)
 }
