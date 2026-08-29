@@ -10,24 +10,44 @@ bootstrap installer。
 
 ## セットアップ（Windows）
 
+**Requirements**
+
+- Windows
+- Windows PowerShell 5.1（OS 標準。PowerShell 7 は installer が導入する）
+- このリポジトリを取得済み（clone または ZIP 展開）
+
+Git / Scoop / chezmoi / PowerShell 7 は **事前に必要ない**（installer が導入する）。
+管理者権限も不要。
+
+**Primary/bootstrap path: Windows PowerShell 5.1**
+
 ```powershell
-git clone git@github.com:takano536/dotfiles.git
-cd dotfiles
-.\install.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-前提は **リポジトリを取得できていること**（= Git があるか、ZIP を展開したこと）
-だけ。Scoop も chezmoi も無い環境で実行できる。管理者権限は不要。
+新しい Windows 環境には PowerShell 7 がまだ無いため、これが正式な起動経路。
+PowerShell 7 からの実行も技術的には可能だが、bootstrap 経路は 5.1 とする。
+installer は途中で PowerShell 7 を導入した後も 5.1 のプロセスで処理を続け、
+PS7 用モジュールの導入など `pwsh.exe` が必要な処理のみ子プロセスとして呼ぶ。
+
+**Package manager: Scoop only**
+
+パッケージ管理は Scoop だけを使う。Windows Terminal 設定が
+`%LOCALAPPDATA%\Programs\Scoop\apps\pwsh\current\pwsh.exe` や
+`...\apps\git\current\bin\bash.exe` のように Scoop の install layout を直接
+参照しているため、Scoop 以外から同じツールを入れても環境が一致しない。
+Scoop を確保できなければ installer は失敗する（代替の package manager は無い）。
 
 `install.ps1` の処理順:
 
 1. リポジトリルートの解決（`.chezmoiroot` と `packages/windows.psd1` を検証）
 2. 前提確認（PowerShell / OS の表示、Scoop ルートの決定）
-3. Scoop の確保（無ければ公式 installer で `%LOCALAPPDATA%\Programs\Scoop` に導入）
+3. Scoop の確保（無ければ公式 installer で `%LOCALAPPDATA%\Programs\Scoop` に導入。
+   **失敗したらここで exit 1**。以降の package 導入も `chezmoi apply` も行わない）
 4. Scoop bucket の確保（`main`、`extras`）
 5. Required パッケージの導入
 6. Optional パッケージの導入
-7. PowerShell モジュールの導入（`pwsh` 経由）
+7. PowerShell モジュールの導入（導入済みの `pwsh` を子プロセスとして使用）
 8. chezmoi の確保
 9. `chezmoi init --apply --source <リポジトリのパス>`
 10. サマリ表示
@@ -94,10 +114,10 @@ PowerShell 7 のモジュールパスへ入れる必要があるため、`pwsh` 
 .\install.ps1 -Verbose             # chezmoi の適用内容を表示
 ```
 
-`-DryRun` では、導入予定のパッケージ・利用予定のパッケージマネージャ
-（scoop / winget）・追加予定の bucket・Scoop bootstrap の予定・chezmoi の
-適用予定（`chezmoi --dry-run`）が表示されるだけで、パッケージ導入も HOME の変更も
-行われない。
+`-DryRun` では、Scoop bootstrap の予定・追加予定の bucket・導入予定のパッケージ
+（表示されるパッケージマネージャは Scoop のみ）・chezmoi の適用予定
+（`chezmoi --dry-run`）が表示されるだけで、ネットワークアクセスも
+パッケージ導入も HOME の変更も行われない。
 
 ### 冪等性
 
@@ -110,33 +130,39 @@ PowerShell 7 のモジュールパスへ入れる必要があるため、`pwsh` 
 - PATH や設定ファイルへの追記は行わない（`chezmoi apply` と Scoop に任せる）
 - chezmoi 自体が冪等
 
-### Scoop / winget の方針
+### Scoop の方針
 
-Windows では Scoop を第一選択とする（この dotfiles は `$env:SCOOP` を
-`%LOCALAPPDATA%\Programs\Scoop` に固定し、Windows Terminal もその下の
-`pwsh` / `git` を参照しているため）。
+Windows のパッケージ管理は **Scoop のみ**。この dotfiles は
+`$env:SCOOP` を `%LOCALAPPDATA%\Programs\Scoop` に固定し、Windows Terminal も
+その下の `pwsh` / `git` の実パスを参照しているため、Scoop は必須インフラであり
+代替経路を持たない。
 
 Scoop が無い場合は公式 installer（Scoop プロジェクトの配布元
-`https://get.scoop.sh`）を使う。`iex (irm ...)` は使わず、
+`https://get.scoop.sh`。実体は `scoopinstaller/install` の `install.ps1`）を使う。
+`iex (irm ...)` は使わず、
 
 1. TLS 1.2 を有効化（Windows PowerShell 5.1 対策）してファイルへダウンロード
-   （`HTTPS_PROXY` が設定されていれば proxy 経由）
+   （`HTTPS_PROXY` が設定されていれば proxy 経由。installer にも `-Proxy` を渡す）
 2. 取得したファイルが Scoop installer か（`-ScoopDir` パラメータを持つか）確認
 3. `-ScoopDir %LOCALAPPDATA%\Programs\Scoop` を指定して実行（昇格しない）
+4. 成功後は `$env:SCOOP` と shims を現在のプロセスの PATH へ反映
 
-という順で行い、各段階の失敗は理由と手動導入手順を表示する。winget は
-「Scoop を用意できなかった場合の fallback」に限定し、Required パッケージのみ
-winget id を持つ。
+という順で行う。いずれかの段階で失敗した場合は、理由・想定 Scoop ディレクトリ・
+「手動で Scoop を導入して再実行すればよい」ことを表示して non-zero exit する
+（package 導入と `chezmoi apply` は行わない）。
 
 ### PowerShell 5.1
 
-`install.ps1` は **Windows PowerShell 5.1 と PowerShell 7 の両方**で動作する
-（`#Requires -Version 5.1`、PS7 専用構文・専用自動変数・専用 cmdlet を使わない、
-ファイルは ASCII のみ）。実行ポリシーでブロックされる場合:
+bootstrap 経路は Windows PowerShell 5.1（`#Requires -Version 5.1`、PS7 専用構文・
+専用自動変数・専用 cmdlet を使わない、ファイルは ASCII のみ）。同じスクリプトは
+PowerShell 7 でも動作するが、新規環境では 5.1 から実行する。
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\install.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
+
+起動時に `pwsh` は要求しない。PowerShell 7 は Required パッケージとして Scoop が
+導入し、その後 PS7 用モジュールの導入時だけ `pwsh` を子プロセスとして呼ぶ。
 
 Linux / WSL では chezmoi を導入したうえで
 `chezmoi init --apply --source <リポジトリのパス>` を実行する（将来 `install.sh` を
@@ -161,8 +187,8 @@ Windows 実機での確認は次の順で行うとよい。
 
 ```powershell
 powershell.exe -NoProfile -Command "Invoke-Pester -Path .\tests"   # 5.1 でのテスト
-pwsh -NoProfile -Command "Invoke-Pester -Path .\tests"             # 7 でのテスト
-.\install.ps1 -DryRun                                              # 計画の確認
-.\install.ps1                                                      # 実行
+pwsh -NoProfile -Command "Invoke-Pester -Path .\tests"             # 7 でのテスト（任意）
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -DryRun
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 scoop list; chezmoi doctor                                         # 結果の確認
 ```

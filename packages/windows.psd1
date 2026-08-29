@@ -4,8 +4,9 @@
     Read with Import-PowerShellDataFile, so this file must stay a plain data
     hashtable (no expressions, no commands).
 
-    Scoop is the package manager. 'Winget' is only a fallback id for the case
-    where Scoop itself could not be bootstrapped.
+    Scoop is the only package manager: this repository pins Scoop's install
+    layout (Windows Terminal starts %LOCALAPPDATA%\Programs\Scoop\apps\pwsh and
+    ...\apps\git), so there is no second source for these packages.
 
     Not bootstrapped on purpose: AI coding agents (Oh My Pi / omp, Claude Code,
     Codex CLI), Docker, WSL distributions, GUI applications and IDEs (Firefox,
@@ -26,31 +27,26 @@
         @{
             Scoop   = 'git'
             Command = 'git'
-            Winget  = 'Git.Git'
             Why     = 'Windows Terminal Git Bash profile, .bashrc, chezmoi source updates'
         }
         @{
             Scoop   = 'pwsh'
             Command = 'pwsh'
-            Winget  = 'Microsoft.PowerShell'
             Why     = 'Windows Terminal default profile, Documents/PowerShell profile'
         }
         @{
             Scoop   = 'neovim'
             Command = 'nvim'
-            Winget  = 'Neovim.Neovim'
             Why     = 'vi/vim aliases in PowerShell and bash, .config/nvim'
         }
         @{
             Scoop   = 'starship'
             Command = 'starship'
-            Winget  = 'Starship.Starship'
             Why     = 'prompt.ps1 and bash tools.bash, .config/starship'
         }
         @{
             Scoop   = 'chezmoi'
             Command = 'chezmoi'
-            Winget  = 'twpayne.chezmoi'
             Why     = 'applies this repository'
         }
     )

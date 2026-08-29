@@ -48,8 +48,16 @@ Describe 'packages/windows.psd1' {
         $optional | Should -Contain 'eza'
         $optional | Should -Contain 'lazygit'
         $optional | Should -Contain 'btop'
-        $optional | Should -Contain 'tree-sitter'
         $optional.Count | Should -BeGreaterThan 5
+    }
+
+    It 'keeps the Treesitter build tools as optional packages' {
+        # .config/nvim/after/plugin/treesitter.rc.lua sets CC=gcc on Windows and
+        # installs parsers, so both are part of a default run.
+        $optional = $packages.Optional | ForEach-Object { $_.Scoop }
+        $optional | Should -Contain 'tree-sitter'
+        $optional | Should -Contain 'gcc'
+        @($packages.Required | ForEach-Object { $_.Scoop }) | Should -Not -Contain 'gcc'
     }
 
     It 'describes every package with a scoop name, a command and a reason' {
@@ -60,10 +68,11 @@ Describe 'packages/windows.psd1' {
         }
     }
 
-    It 'gives every required package a winget fallback id' {
-        foreach ($package in $packages.Required) {
-            $package.Winget | Should -Not -BeNullOrEmpty
+    It 'defines no winget metadata, because Scoop is the only package manager' {
+        foreach ($package in $allPackages) {
+            $package.Keys | Should -Not -Contain 'Winget'
         }
+        Get-Content -LiteralPath $packageFile -Raw | Should -Not -Match 'winget'
     }
 
     It 'lists no package twice' {
@@ -133,6 +142,12 @@ Describe 'install.ps1' {
             $result.StdOut | Should -Match 'Applying dotfiles with chezmoi'
             $result.StdOut | Should -Match 'Summary'
             $result.StdOut | Should -Match 'Done'
+        }
+
+        It 'does not bootstrap Scoop when Scoop is already installed' {
+            $result.StdOut | Should -Match ([regex]::Escape($sandbox.Bin))
+            $result.StdOut | Should -Not -Match 'downloading'
+            $result.StdOut | Should -Not -Match 'would bootstrap Scoop'
         }
 
         It 'adds only the declared Scoop buckets' {
@@ -378,29 +393,30 @@ Describe 'install.ps1' {
             Get-ChildItem -LiteralPath $sandbox.Home -Force | Should -HaveCount 0
         }
 
-        It 'reports a failed bootstrap and fails the run' {
+        It 'aborts the run when the bootstrap fails' {
             # HTTPS_PROXY points at a closed port, so the download cannot succeed.
             New-FakeExecutable -Directory $sandbox.Bin -Name 'chezmoi' | Out-Null
+            New-FakePwsh -Sandbox $sandbox | Out-Null
 
             $result = Invoke-InstallScript -Sandbox $sandbox
 
             $result.ExitCode | Should -Not -Be 0
             $result.StdOut | Should -Match 'Downloading the Scoop installer'
-            $result.StdOut | Should -Match 'required failures'
-            $result.StdErr | Should -Match 'required packages'
+            $result.StdErr | Should -Match 'Scoop could not be bootstrapped'
+            $result.StdErr | Should -Match ([regex]::Escape($sandbox.Scoop))
+            $result.StdErr | Should -Match ([regex]::Escape('https://scoop.sh'))
         }
 
-        It 'falls back to winget when it is available' {
-            $wingetLog = New-FakeExecutable -Directory $sandbox.Bin -Name 'winget'
-            New-FakeExecutable -Directory $sandbox.Bin -Name 'chezmoi' | Out-Null
+        It 'installs no package and applies nothing after a failed bootstrap' {
+            $chezmoiLog = New-FakeExecutable -Directory $sandbox.Bin -Name 'chezmoi'
             New-FakePwsh -Sandbox $sandbox | Out-Null
 
-            $result = Invoke-InstallScript -Sandbox $sandbox -Arguments @('-SkipOptional')
+            $result = Invoke-InstallScript -Sandbox $sandbox
 
-            $result.ExitCode | Should -Be 0
-            $wingetCalls = (Get-FakeInvocation -LogPath $wingetLog) -join ' '
-            $wingetCalls | Should -Match ([regex]::Escape('--id Git.Git'))
-            $wingetCalls | Should -Match ([regex]::Escape('--id Neovim.Neovim'))
+            $result.StdOut | Should -Not -Match 'Installing required packages'
+            $result.StdOut | Should -Not -Match 'Applying dotfiles with chezmoi'
+            (Get-FakeInvocation -LogPath $chezmoiLog).Count | Should -Be 0
+            Get-ChildItem -LiteralPath $sandbox.Home -Force | Should -HaveCount 0
         }
 
         It 'finds a Scoop shim that is not on PATH yet' {
@@ -426,13 +442,13 @@ Describe 'install.ps1' {
             Remove-Sandbox -Sandbox $sandbox
         }
 
-        It 'fails with installation instructions when no package manager can provide it' {
+        It 'fails with Scoop installation instructions when Scoop cannot provide it' {
             $result = Invoke-InstallScript -Sandbox $sandbox -Arguments @('-SkipPackages')
 
             $result.ExitCode | Should -Not -Be 0
             $result.StdErr | Should -Match 'chezmoi was not found'
             $result.StdErr | Should -Match 'scoop install chezmoi'
-            $result.StdErr | Should -Match ([regex]::Escape('winget install twpayne.chezmoi'))
+            $result.StdErr | Should -Not -Match 'winget'
         }
 
         It 'fails without touching a package manager when -SkipChezmoiInstall is used' {
@@ -546,10 +562,11 @@ Describe 'install.ps1' {
         BeforeAll {
             $installPath = Join-Path $RepoRoot 'install.ps1'
             $packagePath = Join-Path (Join-Path $RepoRoot 'packages') 'windows.psd1'
+            $readmePath = Join-Path $RepoRoot 'README.md'
             $tokens = $null
             $errors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile(
-                $installPath, [ref]$tokens, [ref]$errors) | Out-Null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+                $installPath, [ref]$tokens, [ref]$errors)
         }
 
         It 'parses without errors' {
@@ -622,6 +639,46 @@ Describe 'install.ps1' {
             $envProfile | Should -Match ([regex]::Escape('Programs\Scoop'))
             Get-Content -LiteralPath $installPath -Raw |
                 Should -Match ([regex]::Escape('Programs\Scoop'))
+        }
+
+        It 'documents Windows PowerShell 5.1 as the bootstrap entry point' {
+            $help = Get-Content -LiteralPath $installPath -Raw
+            $help | Should -Match ([regex]::Escape('powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1'))
+            Get-Content -LiteralPath $readmePath -Raw |
+                Should -Match ([regex]::Escape('powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1'))
+        }
+
+        It 'requires no PowerShell 7 to start, only for the module step' {
+            # Windows PowerShell 5.1 has to get all the way to 'scoop install
+            # pwsh', so pwsh may only be resolved inside Install-PSModule.
+            $lookups = $ast.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.CommandAst] -and
+                    $node.GetCommandName() -eq 'Find-Executable' -and
+                    $node.CommandElements.Count -gt 1 -and
+                    "$($node.CommandElements[1])" -match 'pwsh'
+                }, $true)
+            $lookups.Count | Should -Be 1
+
+            $enclosing = $lookups[0].Parent
+            while ($enclosing -and -not ($enclosing -is [System.Management.Automation.Language.FunctionDefinitionAst])) {
+                $enclosing = $enclosing.Parent
+            }
+            $enclosing.Name | Should -Be 'Install-PSModule'
+            Get-Content -LiteralPath $installPath -Raw | Should -Not -Match '#Requires.*PSEdition'
+        }
+
+        It 'contains no winget code path anywhere' {
+            foreach ($path in @($installPath, $packagePath, $readmePath,
+                    (Join-Path $PSScriptRoot 'Install.Tests.ps1'),
+                    (Join-Path $PSScriptRoot 'TestHelpers.ps1'))) {
+                $content = Get-Content -LiteralPath $path -Raw
+                # This test names winget itself, so only other files may not.
+                if ($path -like '*Install.Tests.ps1') {
+                    continue
+                }
+                $content | Should -Not -Match 'winget'
+            }
         }
     }
 

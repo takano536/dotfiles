@@ -7,6 +7,20 @@
     available, then runs 'chezmoi init --apply' with this repository as the
     chezmoi source directory. Safe to run repeatedly.
 
+    The bootstrap entry point is Windows PowerShell 5.1, which every Windows
+    installation ships:
+
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+
+    PowerShell 7 is installed on the way as a package, not required to start.
+    Only the steps that genuinely need it, such as installing modules into the
+    module path of PowerShell 7, call the installed pwsh as a child process.
+
+    Scoop is the only package manager: this repository pins Scoop's install
+    layout (Windows Terminal starts %LOCALAPPDATA%\Programs\Scoop\apps\pwsh and
+    ...\apps\git), so a run that cannot get Scoop fails instead of installing
+    the same tools from somewhere else.
+
     Required packages are needed for the applied dotfiles to work; a failure
     makes the whole run fail. Optional packages are everyday CLI and TUI tools;
     a failure is reported as a warning and the run continues. AI coding agents,
@@ -26,7 +40,7 @@
     Fail instead of installing chezmoi when it is not found.
 
 .EXAMPLE
-    .\install.ps1
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 .EXAMPLE
     .\install.ps1 -DryRun
@@ -139,10 +153,6 @@ function Install-Scoop {
     $installerUri = 'https://get.scoop.sh'
     $installerPath = Join-Path ([IO.Path]::GetTempPath()) 'install-scoop.ps1'
 
-    if ($DryRun) {
-        Write-Host "    would download $installerUri and install Scoop into $script:ScoopRoot"
-        return $false
-    }
 
     # Windows PowerShell 5.1 still negotiates TLS 1.0 on older systems.
     try {
@@ -224,8 +234,8 @@ function Add-ScoopBucket {
 
 function Install-BootstrapPackage {
     <#
-        Installs one package entry from packages\windows.psd1 and returns
-        whether the package is available afterwards.
+        Installs one package entry from packages\windows.psd1 with Scoop and
+        returns whether the package is available afterwards.
     #>
     param(
         [Parameter(Mandatory, Position = 0)]
@@ -241,45 +251,24 @@ function Install-BootstrapPackage {
     }
 
     if ($DryRun) {
-        # Scoop is bootstrapped before packages are installed, so scoop is the
-        # manager that a real run would try first.
-        $manager = 'scoop'
-        if (-not $script:ScoopPath -and $script:WingetPath -and $Package.ContainsKey('Winget')) {
-            $manager = 'winget'
-        }
-        Write-Host "    would install with ${manager}: $name"
+        Write-Host "    would install with scoop: $name"
         $script:Planned += $name
         return $true
     }
 
-    if ($script:ScoopPath) {
-
-        Write-Host "    scoop install $name"
-        & $script:ScoopPath install $name
-        if ($LASTEXITCODE -eq 0) {
-            $script:Installed += $name
-            return $true
-        }
-
-        Write-Host "    failed: 'scoop install $name' exited with code $LASTEXITCODE"
+    if (-not $script:ScoopPath) {
+        Write-Host "    failed: scoop is not available, cannot install $name"
         return $false
     }
 
-    if ($script:WingetPath -and $Package.ContainsKey('Winget')) {
-
-        Write-Host "    winget install $($Package.Winget)"
-        & $script:WingetPath install --exact --id $Package.Winget `
-            --accept-package-agreements --accept-source-agreements
-        if ($LASTEXITCODE -eq 0) {
-            $script:Installed += $name
-            return $true
-        }
-
-        Write-Host "    failed: 'winget install $($Package.Winget)' exited with code $LASTEXITCODE"
-        return $false
+    Write-Host "    scoop install $name"
+    & $script:ScoopPath install $name
+    if ($LASTEXITCODE -eq 0) {
+        $script:Installed += $name
+        return $true
     }
 
-    Write-Host "    failed: no package manager available for $name"
+    Write-Host "    failed: 'scoop install $name' exited with code $LASTEXITCODE"
     return $false
 }
 
@@ -359,7 +348,6 @@ try {
     }
 
     $script:ScoopPath = Find-Executable 'scoop'
-    $script:WingetPath = Find-Executable 'winget'
 
     ##### Packages #####
     if ($SkipPackages) {
@@ -370,19 +358,24 @@ try {
         if ($script:ScoopPath) {
             Write-Host "    scoop: $script:ScoopPath"
         }
+        elseif ($DryRun) {
+            Write-Host "    would bootstrap Scoop from https://get.scoop.sh into $script:ScoopRoot"
+        }
         else {
+            # Scoop is required infrastructure: Windows Terminal starts pwsh and
+            # bash from the Scoop install layout, so there is no second source
+            # for these packages.
             if (Install-Scoop) {
                 $script:ScoopPath = Find-Executable 'scoop'
             }
-            if (-not $script:ScoopPath -and -not $DryRun) {
-                Add-Note 'Scoop is not available; packages with a winget id are installed with winget instead.'
+            if (-not $script:ScoopPath) {
+                throw "Scoop could not be bootstrapped into '$script:ScoopRoot', and it is the only package manager this repository supports. Install Scoop manually (see https://scoop.sh), then re-run install.ps1."
             }
+            Write-Host "    scoop: $script:ScoopPath"
         }
 
-        if ($script:ScoopPath -or $DryRun) {
-            Write-Step 'Ensuring Scoop buckets'
-            Add-ScoopBucket $packages.Buckets
-        }
+        Write-Step 'Ensuring Scoop buckets'
+        Add-ScoopBucket $packages.Buckets
 
         Write-Step 'Installing required packages'
         foreach ($package in $packages.Required) {
@@ -408,16 +401,20 @@ try {
     }
 
     ##### chezmoi #####
+    # chezmoi is one of the required packages, so the step above normally
+    # installed it already. This resolves it again for the -SkipPackages case
+    # and to get the path that is used for the apply below; the package entry
+    # itself stays the single source of the package name.
     Write-Step 'Checking chezmoi'
     $chezmoi = Find-Executable 'chezmoi'
     if (-not $chezmoi) {
         if ($SkipChezmoiInstall) {
-            throw "chezmoi was not found on PATH and -SkipChezmoiInstall was specified. Install chezmoi with 'scoop install chezmoi' or 'winget install twpayne.chezmoi', then re-run install.ps1."
+            throw "chezmoi was not found on PATH and -SkipChezmoiInstall was specified. Install it with 'scoop install chezmoi', then re-run install.ps1."
         }
 
         $chezmoiPackage = $packages.Required | Where-Object { $_.Command -eq 'chezmoi' } | Select-Object -First 1
         if (-not (Install-BootstrapPackage $chezmoiPackage)) {
-            throw "chezmoi was not found and could not be installed. Install it with 'scoop install chezmoi', 'winget install twpayne.chezmoi', or see https://www.chezmoi.io/install/, then re-run install.ps1."
+            throw "chezmoi was not found and could not be installed with Scoop. Install it with 'scoop install chezmoi' (see https://www.chezmoi.io/install/), then re-run install.ps1."
         }
 
         $chezmoi = Find-Executable 'chezmoi'
