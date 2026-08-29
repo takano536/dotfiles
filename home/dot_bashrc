@@ -1,0 +1,8 @@
+[[ $- == *i* ]] || return
+
+BASH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/bash"
+
+source "$BASH_CONFIG/env.bash"
+source "$BASH_CONFIG/options.bash"
+source "$BASH_CONFIG/aliases.bash"
+source "$BASH_CONFIG/tools.bash"
