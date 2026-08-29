@@ -295,15 +295,13 @@ function Install-PSModule {
         return
     }
 
+    # One line, because a command line with embedded newlines does not survive
+    # every Windows shell that may sit between here and pwsh.
     $quoted = ($Name | ForEach-Object { "'$_'" }) -join ', '
-    $command = @"
-`$ErrorActionPreference = 'Stop'
-foreach (`$name in @($quoted)) {
-    if (Get-Module -ListAvailable -Name `$name) { continue }
-    Write-Host "    Install-Module `$name"
-    Install-Module -Name `$name -Scope CurrentUser -Force
-}
-"@
+    $command = "`$ErrorActionPreference = 'Stop'; " +
+    "foreach (`$name in @($quoted)) { " +
+    "if (Get-Module -ListAvailable -Name `$name) { continue }; " +
+    "Install-Module -Name `$name -Scope CurrentUser -Force }"
 
     Write-Host "    checking PowerShell modules: $($Name -join ', ')"
     & $pwshPath -NoLogo -NoProfile -NonInteractive -Command $command

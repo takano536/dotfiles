@@ -54,13 +54,20 @@ jobs:
         run: |
           Import-Module Pester -RequiredVersion $env:PESTER_VERSION
           $result = Invoke-Pester -Path ./tests -Output Detailed -PassThru
+          foreach ($test in $result.Failed) {
+              Write-Host "::error title=$($test.ExpandedName)::$($test.ErrorRecord.DisplayErrorMessage)"
+          }
           if ($result.FailedCount -gt 0) { exit 1 }
 
       - name: Test with PowerShell 7
+        if: always()
         shell: pwsh
         run: |
           Import-Module Pester -RequiredVersion $env:PESTER_VERSION
           $result = Invoke-Pester -Path ./tests -Output Detailed -PassThru
+          foreach ($test in $result.Failed) {
+              Write-Host "::error title=$($test.ExpandedName)::$($test.ErrorRecord.DisplayErrorMessage)"
+          }
           if ($result.FailedCount -gt 0) { exit 1 }
 
       - name: Lint (errors only)

@@ -113,8 +113,11 @@ Describe 'configuration files parse' {
     It 'parses the TOML configuration' -Skip:(-not $RealChezmoi) {
         # chezmoi ships a TOML parser, so no extra dependency is needed.
         foreach ($path in (Get-DotfilesPath -Filter '*.toml')) {
+            # Backslashes are escape sequences inside a Go template string, and
+            # Go accepts forward slashes on Windows too.
+            $templatePath = $path -replace '\\', '/'
             $result = Invoke-Tool -FilePath $RealChezmoi -ToolArguments @(
-                'execute-template', "{{ (include `"$path`") | fromToml | len }}")
+                'execute-template', "{{ (include `"$templatePath`") | fromToml | len }}")
             $result.ExitCode | Should -Be 0 -Because "$path should be valid TOML: $($result.Output)"
         }
     }
