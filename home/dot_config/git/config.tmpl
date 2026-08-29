@@ -1,0 +1,16 @@
+[core]
+{{- if eq .chezmoi.os "windows" }}
+	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
+{{- end }}
+
+[user]
+	name = takano536
+	email = 85817284+takano536@users.noreply.github.com
+
+{{- if eq .chezmoi.os "windows" }}
+[credential "helperselector"]
+	selected = manager
+{{- end }}
+
+[init]
+	defaultBranch = main
