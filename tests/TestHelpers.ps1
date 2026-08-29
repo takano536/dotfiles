@@ -281,8 +281,10 @@ function Invoke-SandboxProcess {
     # Outside the sandbox home, so that 'the home directory stayed empty'
     # assertions are not defeated by a shell writing its own cache.
     $environment['XDG_CACHE_HOME'] = Join-Path $Sandbox.Root 'cache'
-    $environment['APPDATA'] = Join-Path $Sandbox.Home 'AppData\Roaming'
-    $environment['LOCALAPPDATA'] = Join-Path $Sandbox.Home 'AppData\Local'
+    # Outside the sandbox home like the cache, so that Windows creating
+    # %APPDATA% does not defeat 'the home directory stayed empty' assertions.
+    $environment['APPDATA'] = Join-Path $Sandbox.Root 'AppData\Roaming'
+    $environment['LOCALAPPDATA'] = Join-Path $Sandbox.Root 'AppData\Local'
     $environment['HTTPS_PROXY'] = 'http://127.0.0.1:9'
     foreach ($name in $ExtraEnvironment.Keys) {
         $environment[$name] = $ExtraEnvironment[$name]

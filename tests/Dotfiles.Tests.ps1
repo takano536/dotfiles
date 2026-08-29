@@ -39,8 +39,12 @@ Describe 'chezmoi source state' -Skip:(-not $RealChezmoi) {
     }
 
     It 'resolves the source root through .chezmoiroot' {
+        # Compared by content, not by spelling: Windows hands out short 8.3
+        # temporary paths that chezmoi reports in their long form.
         $root = (Get-Content -LiteralPath (Join-Path $sandbox.Repo '.chezmoiroot') -Raw).Trim()
-        $sourcePath.StdOut.Trim() | Should -Be (Join-Path $sandbox.Repo $root)
+        $reported = $sourcePath.StdOut.Trim()
+        Split-Path -Leaf $reported | Should -Be $root
+        Join-Path $reported '.chezmoiignore' | Should -Exist
     }
 
     It 'manages files in the temporary home' {
@@ -97,17 +101,15 @@ Describe 'configuration files parse' {
         $failures | Should -HaveCount 0
     }
 
-    It 'parses every committed JSON file' {
-        $failures = @()
+    It 'parses every committed JSON file' -Skip:(-not $RealChezmoi) {
+        # Windows Terminal and Zed accept JSONC (comments, trailing commas), so
+        # the files are checked with the parser those tools use, not with a
+        # strict JSON reader.
         foreach ($path in (Get-DotfilesPath -Filter '*.json')) {
-            try {
-                Get-Content -LiteralPath $path -Raw | ConvertFrom-Json | Out-Null
-            }
-            catch {
-                $failures += "$path : $($_.Exception.Message)"
-            }
+            $result = Invoke-Tool -FilePath $RealChezmoi -ToolArguments @(
+                'execute-template', "{{ (include `"$($path -replace '\\', '/')`") | fromJsonc | len }}")
+            $result.ExitCode | Should -Be 0 -Because "$path should be valid JSONC: $($result.Output)"
         }
-        $failures | Should -HaveCount 0
     }
 
     It 'parses the TOML configuration' -Skip:(-not $RealChezmoi) {
