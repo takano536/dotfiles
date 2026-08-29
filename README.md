@@ -11,18 +11,18 @@ Windows / Linux で使っている個人用 dotfiles です。
 
 | アプリ / ツール | 主な設定 |
 |---|---|
-| **PowerShell** | alias、環境変数、モジュール、プロンプトなどのシェル環境 |
-| **bash** | alias、環境変数、shell option、CLIツール連携 |
-| **fish** | alias、キーバインド、PATH、CLIツール連携、テーマ |
-| **Starship** | Catppuccin Mocha ベースの Powerline スタイルのプロンプト。OS、shell、Git、言語、時刻、実行時間などを表示 |
-| **Neovim** | Catppuccin、Treesitter、Lualine、Noice、Trouble、Rainbow Delimiters などを使った開発環境 |
-| **Vim** | Vim用の基本的な編集環境 |
-| **tmux** | Catppuccin Mocha のステータスライン、CPU / RAM / battery / uptime 表示、マウス操作 |
-| **Git** | Git の共通設定 |
-| **Windows Terminal** | Catppuccin Mocha、UDEV Gothic、Acrylic、PowerShell / Git Bash / WSL などのプロファイルとキーバインド |
-| **Zed** | Catppuccin Latte / Mocha、UDEV Gothic、エディタUI、ローカルモデルを使った edit prediction |
-| **Sublime Text** | Material Theme / ayu、UDEV Gothic、タブ・サイドバー・エディタUIなど |
-| **Firefox** | `userChrome.css` / `userContent.css` / `user.js` によるブラウザUIと動作のカスタマイズ |
+| **[PowerShell](https://github.com/PowerShell/PowerShell)** | alias、環境変数、モジュール、プロンプトなどのシェル環境 |
+| **[bash](https://www.gnu.org/software/bash/)** | alias、環境変数、shell option、CLIツール連携 |
+| **[fish](https://github.com/fish-shell/fish-shell)** | alias、キーバインド、PATH、CLIツール連携、テーマ |
+| **[Starship](https://github.com/starship/starship)** | Catppuccin Mocha ベースの Powerline スタイルのプロンプト。OS、shell、Git、言語、時刻、実行時間などを表示 |
+| **[Neovim](https://github.com/neovim/neovim)** | Catppuccin、Treesitter、Lualine、Noice、Trouble、Rainbow Delimiters などを使った開発環境 |
+| **[Vim](https://github.com/vim/vim)** | Vim用の基本的な編集環境 |
+| **[tmux](https://github.com/tmux/tmux)** | Catppuccin Mocha のステータスライン、CPU / RAM / battery / uptime 表示、マウス操作 |
+| **[Git](https://git-scm.com/)** | Git の共通設定 |
+| **[Windows Terminal](https://github.com/microsoft/terminal)** | Catppuccin Mocha、UDEV Gothic、Acrylic、PowerShell / Git Bash / WSL などのプロファイルとキーバインド |
+| **[Zed](https://github.com/zed-industries/zed)** | Catppuccin Latte / Mocha、UDEV Gothic、エディタUI、ローカルモデルを使った edit prediction |
+| **[Sublime Text](https://www.sublimetext.com/)** | Material Theme / ayu、UDEV Gothic、タブ・サイドバー・エディタUIなど |
+| **[Firefox](https://www.mozilla.org/firefox/)** | `userChrome.css` / `userContent.css` / `user.js` によるブラウザUIと動作のカスタマイズ |
 
 > [!NOTE]
 > OSによって不要な設定は `.chezmoiignore` で除外されます。
@@ -30,11 +30,15 @@ Windows / Linux で使っている個人用 dotfiles です。
 
 ### :art: 見た目
 
-全体的に **Catppuccin Mocha** を中心に揃えています。
+全体的に **[Catppuccin](https://github.com/catppuccin/catppuccin) Mocha** を中心に揃えています。
 
-Starship、Neovim、tmux、Windows Terminal などで共通した配色を使い、フォントは対応する環境で **UDEV Gothic 35NFLG** を使用しています。
+[Starship](https://github.com/starship/starship)、[Neovim](https://github.com/neovim/neovim)、
+[tmux](https://github.com/tmux/tmux)、[Windows Terminal](https://github.com/microsoft/terminal)
+などで共通した配色を使い、フォントは対応する環境で
+**[UDEV Gothic](https://github.com/yuru7/udev-gothic) 35NFLG** を使用しています。
 
-見た目だけでなく、シェルの alias やキーバインド、CLIツールとの連携なども含めて、環境を入れ替えても普段の操作感をなるべく変えない構成にしています。
+見た目だけでなく、シェルの alias やキーバインド、CLIツールとの連携なども含めて、
+環境を入れ替えても普段の操作感をなるべく変えない構成にしています。
 
 ## :rocket: セットアップ
 
