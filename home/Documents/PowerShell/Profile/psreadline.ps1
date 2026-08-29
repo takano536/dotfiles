@@ -9,6 +9,28 @@ Set-PSReadlineOption -EditMode Windows
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 
 # コピペのマルチラインモード制御
+Set-PSReadLineKeyHandler `
+    -Key Ctrl+v `
+    -BriefDescription SmartPaste `
+    -LongDescription "Paste and enter multiline mode when pasted text contains newlines" `
+    -ScriptBlock {
+
+    param($key, $arg)
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Paste($key, $arg)
+
+    $line = $null
+    $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState(
+        [ref]$line,
+        [ref]$cursor
+    )
+
+    if ($line.Contains("`n")) {
+        $global:_PSReadLineMultilineMode = $true
+    }
+}
+
 $global:_PSReadLineMultilineMode = $false
 Set-PSReadLineKeyHandler `
     -Key Enter `
