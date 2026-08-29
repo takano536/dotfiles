@@ -13,3 +13,6 @@ $env:SCOOP = "$env:LOCALAPPDATA\Programs\Scoop"
 
 ##### Python #####
 $env:PYTHON_HISTORY = "$env:XDG_STATE_HOME\python\history"
+
+##### Vim #####
+$env:VIMINIT = 'source $XDG_CONFIG_HOME/vim/vimrc'
