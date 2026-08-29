@@ -9,4 +9,5 @@ Documents/WindowsPowerShell/**
 
 {{- if eq .chezmoi.os "windows" }}
 .config/fish
+.config/tmux
 {{- end }}
