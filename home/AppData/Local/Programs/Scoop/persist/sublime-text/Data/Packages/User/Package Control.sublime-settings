@@ -1,0 +1,16 @@
+{
+	"bootstrapped": true,
+	"in_process_packages":
+	[
+	],
+	"installed_packages":
+	[
+		"A File Icon",
+		"ayu",
+		"fish",
+		"Material Theme",
+		"Package Control",
+		"PowerShell",
+		"rainbow_csv",
+	],
+}
