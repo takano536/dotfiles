@@ -5,19 +5,17 @@
     "copyFormatting": "none",
     "copyOnSelect": false,
     "defaultProfile": "{8d59e95c-b44e-4f19-822e-4103883fcb8a}",
-    "disabledProfileSources":
-    [
+    "disabledProfileSources": [
         "Windows.Terminal.Azure",
         "Windows.Terminal.VisualStudio"
     ],
-    "keybindings":
-    [
+    "keybindings": [
         {
             "id": "Terminal.CopyToClipboard",
             "keys": "ctrl+c"
         },
         {
-            "id": "Terminal.PasteFromClipboard",
+            "id": null,
             "keys": "ctrl+v"
         },
         {
@@ -29,35 +27,29 @@
             "keys": "alt+shift+d"
         }
     ],
-    "newTabMenu":
-    [
+    "newTabMenu": [
         {
             "type": "remainingProfiles"
         }
     ],
-    "profiles":
-    {
-        "defaults":
-        {
+    "profiles": {
+        "defaults": {
             "closeOnExit": "never",
             "colorScheme": "Catppuccin Mocha",
-            "font":
-            {
+            "font": {
                 "face": "UDEV Gothic 35NFLG"
             },
             "opacity": 50,
             "padding": "20",
             "useAcrylic": true
         },
-        "list":
-        [
+        "list": [
             {
                 "altGrAliasing": true,
                 "antialiasingMode": "grayscale",
                 "commandline": "%LOCALAPPDATA%\\Programs\\Scoop\\apps\\pwsh\\current\\pwsh.exe",
                 "cursorShape": "bar",
-                "font":
-                {
+                "font": {
                     "size": 12
                 },
                 "guid": "{8d59e95c-b44e-4f19-822e-4103883fcb8a}",
@@ -91,11 +83,18 @@
                 "hidden": false,
                 "name": "QMK MSYS",
                 "source": "QMK"
-            }
+            },
+            {
+                "commandline": "%LOCALAPPDATA%\\Programs\\Scoop\\apps\\git\\current\\bin\\bash.exe --login -i",
+                "guid": "{8c508d98-62f8-4c17-a1f9-7e5689f33f73}",
+                "hidden": false,
+                "icon": "%LOCALAPPDATA%\\Programs\\Scoop\\apps\\git\\current\\git-bash.exe",
+                "name": "Git Bash",
+                "startingDirectory": "%USERPROFILE%"
+            },
         ]
     },
-    "schemes":
-    [
+    "schemes": [
         {
             "background": "#1E1E2E",
             "black": "#45475A",
