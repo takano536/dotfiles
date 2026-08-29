@@ -1,0 +1,67 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+"restore_on_startup": "empty_tab",
+ "disable_ai": true,
+ "cli_default_open_behavior": "existing_window",
+ "on_last_window_closed": "quit_app",
+ "when_closing_with_no_tabs": "close_window",
+ "tabs": {
+"show_close_button": "hidden"
+},
+ "terminal": {
+    "working_directory": "current_file_directory",
+    "font_size": 11.0
+  },
+  "format_on_save": "off",
+  "edit_predictions": {
+    "mode": "eager",
+    "provider": "open_ai_compatible_api",
+    "open_ai_compatible_api": {
+      "max_output_tokens": 16,
+      "prompt_format": "qwen",
+      "model": "Qwen2.5-Coder-1.5B-Instruct-NPU",
+      "api_url": "http://localhost:13305/v1/completions",
+    },
+  },
+  "autosave": "off",
+  "minimap": {
+    "show": "always",
+  },
+  "preview_tabs": {
+    "enabled": true,
+  },
+  "tab_bar": {
+    "show_nav_history_buttons": false,
+    "show_tab_bar_buttons": true,
+    "show": true,
+  },
+  "title_bar": {
+    "show_onboarding_banner": true,
+    "show_project_items": false,
+    "show_branch_name": false,
+  },
+  "project_panel": {
+    "button": true,
+  },
+  "auto_update": false,
+  "buffer_font_family": "UDEV Gothic 35NFLG",
+  "icon_theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Mocha",
+  },
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte - No Italics",
+    "dark": "Catppuccin Mocha - No Italics",
+  },
+}
