@@ -15,7 +15,7 @@
             "keys": "ctrl+c"
         },
         {
-            "id": null,
+            "id": "Terminal.PasteFromClipboard",
             "keys": "ctrl+v"
         },
         {
