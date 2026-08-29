@@ -5,4 +5,3 @@ set -gx XDG_STATE_HOME "$HOME/.local/state"
 
 set -gx LESSHISTFILE "$XDG_CACHE_HOME/less/history"
 set -gx STARSHIP_CONFIG "$XDG_CONFIG_HOME/starship/prompt.toml"
-set -gx VIMINIT "source $XDG_CONFIG_HOME/vim/vimrc"
