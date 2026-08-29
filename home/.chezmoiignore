@@ -6,3 +6,7 @@ Documents/PowerShell/**
 Documents/WindowsPowerShell/
 Documents/WindowsPowerShell/**
 {{- end }}
+
+{{- if eq .chezmoi.os "windows" }}
+.config/fish
+{{- end }}
