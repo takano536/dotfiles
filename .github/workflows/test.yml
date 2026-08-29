@@ -28,12 +28,20 @@ jobs:
               throw "install.ps1 is bootstrapped with Windows PowerShell 5.1, but this shell is $($PSVersionTable.PSVersion)."
           }
 
-      - name: Install Pester
+      - name: Install Pester for Windows PowerShell 5.1
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           [Net.ServicePointManager]::SecurityProtocol =
               [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser `
+              -Force -SkipPublisherCheck
+
+      - name: Install Pester for PowerShell 7
+        shell: pwsh
+        run: |
+          # The two editions have separate module paths.
+          $ErrorActionPreference = 'Stop'
           Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser `
               -Force -SkipPublisherCheck
 
