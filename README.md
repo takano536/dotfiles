@@ -1,13 +1,15 @@
 # dotfiles
 
-[chezmoi](https://www.chezmoi.io/) で管理している dotfiles と、Windows 用の
+[chezmoi](https://www.chezmoi.io/) で管理している dotfiles と、Windows / Linux 用の
 bootstrap installer。
 
 - `home/` … chezmoi の source state（`.chezmoiroot` でここが source directory になる）
 - `install.ps1` … Windows 用のセットアップスクリプト
+- `install.sh` … Linux（Debian 13）用のセットアップスクリプト
 - `packages/windows.psd1` … `install.ps1` が導入するパッケージ定義
-- `tests/` … installer の Pester テストと dotfiles の smoke テスト
-- `.github/workflows/test.yml` … CI（Windows / Linux の 2 job）
+- `packages/linux.tsv` … `install.sh` が導入するパッケージ定義
+- `tests/` … installer のテスト（Windows: Pester / Linux: bash）と dotfiles の smoke テスト
+- `.github/workflows/test.yml` … CI（windows / linux / debian の 3 job）
 
 ## セットアップ（Windows）
 
@@ -165,13 +167,156 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 起動時に `pwsh` は要求しない。PowerShell 7 は Required パッケージとして Scoop が
 導入し、その後 PS7 用モジュールの導入時だけ `pwsh` を子プロセスとして呼ぶ。
 
-Linux / WSL では chezmoi を導入したうえで
-`chezmoi init --apply --source <リポジトリのパス>` を実行する（将来 `install.sh` を
-`install.ps1` の隣に置く場合も同じ構造）。
+Linux は下の「セットアップ（Linux / Debian 13）」を参照（`install.sh` が同じ構造で
+`chezmoi init --apply --source <リポジトリのパス>` まで行う）。
+
+## セットアップ（Linux / Debian 13）
+
+**Requirements**
+
+- Debian GNU/Linux 13 (trixie)。`/etc/os-release` の `ID=debian` かつ
+  `VERSION_ID=13` を正式サポート条件とする。それ以外では理由を表示して
+  non-zero exit し、apt 前提の処理へ進まない（Ubuntu などへの汎用化はしない）
+- bash（Debian 標準）
+- 通常ユーザー（root ではない。`sudo ./install.sh` や root shell からの実行は拒否する）。
+  このリポジトリを clone または展開済み
+
+git / chezmoi は **事前に必要ない**（installer が導入する）。
+
+**Primary/bootstrap path: bash**
+
+```bash
+bash ./install.sh
+```
+
+`install.sh` の処理順:
+
+1. オプション解析（未知オプションは non-zero exit）
+2. root 実行の拒否（`EUID == 0` なら理由を表示して exit 1）
+3. リポジトリルートの解決（script 自身の位置から。`.chezmoiroot` と
+   `packages/linux.tsv` を検証。cwd に依存しない）
+4. ディストリビューション判定（`/etc/os-release`）
+5. package 定義の読み込みと検証
+6. Required パッケージの導入（`apt-get`）
+7. Optional パッケージの導入（`apt-get`）
+8. Required に失敗があればここで exit 1（`chezmoi apply` は行わない）
+9. chezmoi の確保（無ければ公式 release binary を `~/.local/bin` へ）
+10. `chezmoi init --apply --source <リポジトリのパス>`
+11. サマリ表示（present / installed / planned / optional failures / notes）
+
+**Package manager: apt only**
+
+system package は `apt-get` だけを使う。Homebrew / Linuxbrew / snap / flatpak /
+nix / pacman / dnf / yum は使わず、複数 package manager の fallback も作らない。
+第三者 apt repository の追加も行わない（`/etc/apt` は触らない）。
+`apt` CLI ではなく automation 向けの `apt-get` を使い、`DEBIAN_FRONTEND=noninteractive`
+で対話プロンプトを避け、`apt-get update` は 1 run につき最大 1 回、install は
+Required / Optional ごとに batch 実行する（batch が失敗した場合のみ、どれが
+失敗したかを特定するため 1 つずつ retry する）。
+
+**sudo は apt 操作時のみ**
+
+`sudo ./install.sh` は使わない。root で起動した場合は起動直後に
+
+```text
+install.sh: do not run install.sh as root or with sudo. ...
+```
+
+と表示して exit 1 する（root の HOME へ chezmoi が書き込んだり、root 所有の
+ファイルが残るのを防ぐため）。apt 操作だけを
+`sudo env DEBIAN_FRONTEND=noninteractive apt-get ...` として実行し、
+`chezmoi apply` は必ず実行ユーザーとして走る。導入すべき package があるのに
+sudo が無い場合は明確なエラーになる（全て導入済みなら sudo は不要）。
+
+### インストール対象
+
+パッケージ一覧は `packages/linux.tsv`（tab 区切りのプレーンデータ。shell として
+source はしない）が唯一の定義元。`install.sh` にパッケージ名は書かない。列は
+`tier` / `source` / `package` / `command` / `why`。
+
+- `tier` … `required` / `optional`
+- `source` … `apt`（Debian 13 の package）/ `upstream`（Debian 13 に無いので公式
+  release から取得）/ `none`（Debian 13 に無く、bootstrap もしない）
+- `command` … Debian が実際に提供する実行ファイル名。package 名と一致しないものが
+  ある（`fd-find` → `fdfind`、`bat` → `batcat`、`git-delta` → `delta`、
+  `tree-sitter-cli` → `tree-sitter`）。この dotfiles は `fd` / `bat` を参照して
+  いないため、互換 symlink や alias の層は作らない
+
+**Required** … 適用した dotfiles が壊れる/既定動作に落ちるもの。導入に失敗したら
+installer 全体を失敗（exit 1）扱いにし、`chezmoi apply` を行わない。
+
+| package | command | 理由 |
+|---|---|---|
+| `git` | `git` | chezmoi の source 更新、`.config/git/config` |
+| `curl` | `curl` | Debian 13 に無い chezmoi の取得 |
+| `ca-certificates` | `update-ca-certificates` | その取得と git の HTTPS |
+| `bash` | `bash` | `.bashrc` / `.bash_profile`、installer 自体 |
+| `fish` | `fish` | `.config/fish`（Linux 側の対話シェル設定） |
+| `tmux` | `tmux` | `.config/tmux/tmux.conf` |
+| `neovim` | `nvim` | bash / fish の `vi` `vim` alias、`.config/nvim` |
+| `starship` | `starship` | bash / fish の prompt 初期化、`.config/starship` |
+| `chezmoi` | `chezmoi` | このリポジトリの適用 |
+
+Windows 版の分類をそのまま移植していない。Linux では `.chezmoiignore` により
+fish / tmux 設定が適用されるため、`fish` と `tmux` を Required に含めている。
+
+**Optional** … 日常的に使う CLI / TUI と Neovim 用の補助ツール。失敗しても続行し、
+最後のサマリに失敗パッケージを表示する（installer 自体は成功扱い）。
+
+`zoxide` `eza` `fzf` `tree-sitter-cli` `gcc` `ripgrep` `fd-find` `bat` `jq`
+`git-delta` `lazygit` `gh` `btop` `fastfetch` `yazi`
+
+**apt 以外から入れるもの**
+
+- `chezmoi` … Debian 13 の repository に package が無い。bootstrap 自体に必要な
+  ため、公式 upstream（`github.com/twpayne/chezmoi` の release）から取得する。
+  `curl | sh` は使わず、HTTPS のみ・`mktemp -d` の一時ディレクトリへ
+  download → 公式 `checksums.txt` と `sha256sum` で検証 → `~/.local/bin` へ配置、
+  という順で行う（`/usr/local` などシステム領域は汚さない）。architecture は
+  `uname -m` から判定し、対応しない場合は手動導入を案内して終了する。
+  version は再現性のため pin してある
+- `yazi` … Debian 13 に package が無いため bootstrap しない（`source` が `none`）。
+  既に PATH にあれば present として扱い、無ければ skip した旨を表示するだけ
+
+`~/.local/bin` は fish の `conf.d/20-path.fish` と bash の `.config/bash/env.bash`
+が PATH に追加する。
+
+### インストールしないもの
+
+Windows 版と同じ方針。**AI coding agent（Oh My Pi / `omp`、Claude Code、Codex CLI）
+は入らない。** そのほか Bun / Node.js / Python などのランタイム、Docker などの
+container runtime、GUI アプリ、フォント、SSH 鍵や認証情報も対象外。既に環境に
+あっても削除はしない（単に installer が導入しないだけ）。
+
+### オプション
+
+```bash
+bash ./install.sh --dry-run               # 計画のみ表示。install / download / HOME 変更を一切行わない
+bash ./install.sh --skip-packages         # chezmoi 以外の package 導入を行わない
+bash ./install.sh --skip-optional         # Required だけ入れ、CLI / TUI は入れない
+bash ./install.sh --skip-chezmoi-install  # chezmoi が無い場合に自動導入せずエラー終了
+bash ./install.sh --help                  # 使い方
+```
+
+未知のオプションは non-zero exit する。`--dry-run` では `apt-get update` /
+`apt-get install` / download / file write / symlink 作成 / `chezmoi apply` を
+一切実行せず、実行予定のコマンドを `would run:` として表示するだけ。
+
+### 冪等性
+
+2 回目以降の実行も安全。
+
+- package は `command -v <command>`、解決できない場合は `dpkg-query` で判定し、
+  導入済みなら `apt-get` を呼ばない（`ca-certificates` のように通常ユーザーの PATH に
+  コマンドが出ないものがあるため両方見る）
+- 導入すべきものが無ければ `apt-get update` すら実行しない
+- `~/.bashrc` などへの行の追記は行わない（設定適用は chezmoi に任せる）
+- chezmoi 自体が冪等
 
 ## テスト
 
-[Pester](https://pester.dev/) 5 が必要（`Install-Module Pester -Scope CurrentUser`）。
+**Windows / dotfiles**: [Pester](https://pester.dev/) 5 が必要
+（`Install-Module Pester -Scope CurrentUser`）。
 
 ```powershell
 Invoke-Pester -Path .\tests
@@ -180,28 +325,54 @@ Invoke-Pester -Path .\tests
 - installer の挙動: `tests/Install.Tests.ps1`（fake Scoop / fake chezmoi / 一時 HOME
   で `install.ps1` を子プロセス実行）
 - chezmoi の展開と apply: `tests/Dotfiles.Tests.ps1`（一時 HOME へ
-  `chezmoi init --apply` して `chezmoi verify`）
+  `chezmoi init --apply` して `chezmoi verify`。OS ごとの `.chezmoiignore` の分岐も
+  確認する）
 - PowerShell 5.1 互換の静的チェック
 - shell / config の軽量 smoke check（PowerShell・JSON・TOML の parse、`bash -n`、
   fish・tmux は導入済みの場合のみ）
 
+**Linux installer**: 追加の依存は無い（plain bash。Bats などは使わない）。
+
+```bash
+bash ./tests/install.tests.sh
+```
+
+`install.sh` を、PATH に fake `apt-get` / `sudo` / `dpkg-query` / `curl` /
+`chezmoi` と最小限の coreutils だけを置いた子プロセスとして、一時 HOME と注入した
+os-release で実行する（実 apt・実 HOME・ネットワークには一切触れない）。確認する
+contract は syntax、package 定義の schema、`--dry-run` / `--skip-*` の挙動、
+root 実行の拒否、package 定義ファイルの不在、非対応ディストリビューション、
+`apt-get` や `sudo` の不在、Required / Optional の失敗時の扱い、chezmoi の
+exit code、冪等性、chezmoi の upstream 取得。`shellcheck` があれば
+`--severity=warning` で実行し、無ければ skip する。root 実行の拒否は uid 0 が
+必要なため、非 root かつ user namespace が使えない環境では skip され、CI の
+debian job（container の既定 user が root）が実経路を確認する。
+
 設定値そのものはテストしない（色・keymap・alias・theme・パッケージ追加を変更しても
-`tests/` の修正は不要）。パッケージ名は `packages/windows.psd1` から読むため、
-Optional を 1 件追加してもテストは変更なしで通る。
+`tests/` の修正は不要）。パッケージ名は `packages/windows.psd1` /
+`packages/linux.tsv` から読むため、Optional を 1 件追加してもテストは変更なしで通る。
 
 ## CI
 
-`.github/workflows/test.yml` の 2 job のみ（`windows-latest` / `ubuntu-latest`）。
+`.github/workflows/test.yml` の 3 job のみ。
 
-- windows: Windows PowerShell 5.1 であることを確認 → Pester（5.1 と 7 の両方）→
-  PSScriptAnalyzer（Error のみ）
-- linux: dotfiles の smoke test（chezmoi apply/verify と shell/config parse）
+- windows（`windows-latest`）: Windows PowerShell 5.1 であることを確認 →
+  Pester（5.1 と 7 の両方）→ PSScriptAnalyzer（Error のみ）
+- linux（`ubuntu-latest`）: `bash -n install.sh` → ShellCheck（warning 以上。
+  runner に同梱）→ Linux installer test → dotfiles の smoke test
+  （chezmoi apply/verify と shell/config parse）
+- debian（`ubuntu-latest` + `container: debian:13`）: 実 Debian 13 userland で
+  `bash -n install.sh` → root 実行が拒否されることを確認（container の既定は root）
+  → 非 root ユーザーを作成し、その user で Linux installer test と
+  `install.sh --dry-run`
 
 **CI does not install the full workstation package set.** Scoop bootstrap も
-`scoop install`（gcc / tree-sitter / Optional packages）も PSModules の実導入も
-行わない。パッケージ導入の流れは fake Scoop によるテストで検証し、実際の
-package manager・ネットワーク・manifest の可用性を CI の成否条件にしない。
-CI が入れるのはテスト自体に必要な Pester と chezmoi のバイナリだけ。
+`scoop install` も PSModules の実導入も行わず、Linux 側も
+`apt-get install <全 package>` や実機への `chezmoi apply` を行わない。
+パッケージ導入の流れは fake package manager によるテストで検証し、実際の
+package manager・ネットワーク・package の可用性を CI の成否条件にしない。
+CI が入れるのはテスト自体に必要な Pester と chezmoi のバイナリだけで、Linux
+installer test 自体は追加 package を必要としない。
 
 Windows 実機での確認は次の順で行うとよい。
 
@@ -210,4 +381,13 @@ powershell.exe -NoProfile -Command "Invoke-Pester -Path .\tests"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -DryRun
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 scoop list; chezmoi doctor
+```
+
+Debian 13 実機での確認は次の順で行うとよい（`--dry-run` までは環境を変更しない）。
+
+```bash
+bash ./tests/install.tests.sh
+bash ./install.sh --dry-run
+bash ./install.sh
+chezmoi doctor
 ```

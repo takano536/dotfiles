@@ -51,6 +51,29 @@ Describe 'chezmoi source state' -Skip:(-not $RealChezmoi) {
         @($managed.StdOut -split "`n" | Where-Object { $_.Trim() }).Count |
             Should -BeGreaterThan 0
     }
+
+    It 'applies the files of this operating system only' {
+        # .chezmoiignore splits the source state per OS: the PowerShell profile
+        # and AppData are Windows-only, the fish and tmux configuration is not
+        # applied on Windows. Which files belong to which side is chezmoi's
+        # decision; this only checks that the split still happens, so that the
+        # Linux bootstrap does not silently apply Windows files or skip the
+        # shell configuration it installs packages for.
+        $managedPaths = @($managed.StdOut -split "`n" |
+                ForEach-Object { ($_ -replace '\\', '/').Trim() } |
+                Where-Object { $_ })
+
+        if ($OnWindows) {
+            @($managedPaths -like 'Documents/PowerShell/*') | Should -Not -BeNullOrEmpty
+            @($managedPaths -like '.config/fish/*') | Should -BeNullOrEmpty
+        }
+        else {
+            @($managedPaths -like '.config/fish/*') | Should -Not -BeNullOrEmpty
+            @($managedPaths -like '.config/tmux/*') | Should -Not -BeNullOrEmpty
+            @($managedPaths -like 'Documents/PowerShell/*') | Should -BeNullOrEmpty
+            @($managedPaths -like 'AppData/*') | Should -BeNullOrEmpty
+        }
+    }
 }
 
 Describe 'configuration files parse' {

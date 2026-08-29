@@ -1,0 +1,50 @@
+# Packages that install.sh bootstraps on Debian GNU/Linux 13 (trixie).
+#
+# Tab separated, one package per line, comments start with '#'. Plain data on
+# purpose: install.sh reads this file, it is never sourced as shell code, so a
+# package can be added or removed without touching install.sh or the tests.
+#
+# Columns
+#   tier     required = the applied dotfiles are broken or fall back to
+#                       defaults without it, a failure fails the whole run
+#            optional = everyday CLI/TUI, a failure is a warning
+#   source   apt      = Debian 13 package, installed with apt-get
+#            upstream = not in Debian 13, fetched from its official upstream
+#                       release by install.sh
+#            none     = not packaged for Debian 13 and not bootstrapped;
+#                       used if it is already on PATH, otherwise skipped
+#   package  name passed to apt-get (or the upstream project name)
+#   command  executable Debian 13 actually provides, which is not always the
+#            package name (fd-find ships fdfind, bat ships batcat, git-delta
+#            ships delta, tree-sitter-cli ships tree-sitter)
+#   why      which part of these dotfiles needs it
+#
+# Not bootstrapped on purpose: AI coding agents (Oh My Pi / omp, Claude Code,
+# Codex CLI), language runtimes (Bun, Node.js, Python), Docker and other
+# container runtimes, GUI applications, fonts, SSH keys and credentials.
+#
+# tier	source	package	command	why
+required	apt	git	git	chezmoi source updates and .config/git/config
+required	apt	curl	curl	downloads the chezmoi release Debian 13 does not package
+required	apt	ca-certificates	update-ca-certificates	HTTPS trust for git and that download
+required	apt	bash	bash	.bashrc, .bash_profile and this installer
+required	apt	fish	fish	.config/fish is the interactive shell configuration
+required	apt	tmux	tmux	.config/tmux/tmux.conf
+required	apt	neovim	nvim	vi/vim aliases in bash and fish, .config/nvim
+required	apt	starship	starship	prompt init in bash and fish, .config/starship
+required	upstream	chezmoi	chezmoi	applies this repository
+optional	apt	zoxide	zoxide	initialised by bash tools.bash and fish 90-tools.fish
+optional	apt	eza	eza	ls aliases in bash and fish
+optional	apt	fzf	fzf	key bindings sourced by fish 90-tools.fish
+optional	apt	tree-sitter-cli	tree-sitter	parser installs in nvim treesitter.rc.lua
+optional	apt	gcc	gcc	compiles the Neovim tree-sitter parsers
+optional	apt	ripgrep	rg	everyday search from the shell
+optional	apt	fd-find	fdfind	everyday file search from the shell
+optional	apt	bat	batcat	everyday file viewer
+optional	apt	jq	jq	everyday JSON inspection
+optional	apt	git-delta	delta	readable git diffs
+optional	apt	lazygit	lazygit	git TUI
+optional	apt	gh	gh	GitHub CLI for this repository and pull requests
+optional	apt	btop	btop	process TUI
+optional	apt	fastfetch	fastfetch	system summary
+optional	none	yazi	yazi	file manager TUI, no Debian 13 package
