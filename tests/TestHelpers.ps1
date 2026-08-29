@@ -224,6 +224,23 @@ function New-FakePwsh {
     return New-FakeExecutable -Directory $shims -Name 'pwsh'
 }
 
+function Get-SandboxHomeEntry {
+    <#
+        Everything the sandbox home holds, except the AppData directory that
+        Windows PowerShell creates for %USERPROFILE% on its own. Used to assert
+        that a run wrote no dotfiles into the home directory.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        $Sandbox
+    )
+
+    $entries = @(Get-ChildItem -LiteralPath $Sandbox.Home -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -ne 'AppData' })
+
+    Write-Output $entries -NoEnumerate
+}
+
 function Invoke-SandboxProcess {
     <#
         Runs a program in a child process with a controlled environment and

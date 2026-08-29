@@ -272,7 +272,7 @@ Describe 'install.ps1' {
             $result.ExitCode | Should -Not -Be 0
             $result.StdErr | Should -Match 'chezmoi was not found'
             $result.StdErr | Should -Match 'scoop install chezmoi'
-            Get-ChildItem -LiteralPath $sandbox.Home -Force | Should -HaveCount 0
+            (Get-SandboxHomeEntry -Sandbox $sandbox).Count | Should -Be 0
         }
 
         It 'fails when the repository or the package list is incomplete' {
@@ -321,7 +321,7 @@ Describe 'install.ps1' {
             $result.StdOut | Should -Not -Match 'Installing required packages'
             $result.StdOut | Should -Not -Match 'Applying dotfiles with chezmoi'
             (Get-FakeInvocation -LogPath $chezmoiLog).Count | Should -Be 0
-            Get-ChildItem -LiteralPath $sandbox.Home -Force | Should -HaveCount 0
+            (Get-SandboxHomeEntry -Sandbox $sandbox).Count | Should -Be 0
         }
 
         It 'finds a Scoop shim that is not on PATH yet' {
@@ -363,7 +363,7 @@ Describe 'install.ps1' {
         It 'changes nothing' {
             (Get-FakeInvocation -LogPath $pwshLog).Count | Should -Be 0
             (Get-FakeInvocation -LogPath $chezmoiLog)[0] | Should -Match '--dry-run'
-            Get-ChildItem -LiteralPath $sandbox.Home -Force | Should -HaveCount 0
+            (Get-SandboxHomeEntry -Sandbox $sandbox).Count | Should -Be 0
             Join-Path $sandbox.Scoop 'apps' | Should -Not -Exist
             Join-Path $sandbox.Scoop 'buckets' | Should -Not -Exist
         }
