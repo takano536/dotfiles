@@ -1,4 +1,8 @@
 {{- if ne .chezmoi.os "windows" }}
 AppData/
 AppData/**
+Documents/PowerShell/
+Documents/PowerShell/**
+Documents/WindowsPowerShell/
+Documents/WindowsPowerShell/**
 {{- end }}
