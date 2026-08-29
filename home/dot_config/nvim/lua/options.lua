@@ -67,3 +67,7 @@ if vim.fn.has('win32') == 1 then
         cache_enabled = 0,
     }
 end
+if vim.env.SSH_TTY then
+    vim.g.clipboard = 'osc52'
+end
+
