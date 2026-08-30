@@ -24,7 +24,7 @@ install_script="$repo_root/install.sh"
 
 # Only these coreutils are visible to install.sh, so a tool that happens to be
 # installed on the machine running the tests can never change the result.
-stub_tools=(cat chmod cp dirname env gzip mkdir mktemp rm sha256sum tar uname)
+stub_tools=(cat chmod cp dirname env gzip mkdir mktemp mv rm rmdir sha256sum tar uname)
 
 tests_run=0
 tests_failed=0
@@ -36,6 +36,11 @@ repo=''
 fake_bin=''
 log_dir=''
 home_dir=''
+data_dir=''
+xdg_data_home=''
+clone_target=''
+standalone_script=''
+provides_dir=''
 output=''
 status=0
 installer_prefix=()
@@ -139,9 +144,20 @@ new_sandbox() {
     fake_bin="$sandbox/bin"
     log_dir="$sandbox/log"
     home_dir="$sandbox/home"
+    # XDG_DATA_HOME of the run, so a bootstrap clone lands inside the sandbox;
+    # it contains a space as well.
+    data_dir="$sandbox/xdg data"
+    xdg_data_home="$data_dir"
+    clone_target="$data_dir/chezmoi"
+    # Where a downloaded installer sits: no repository around it.
+    standalone_script="$sandbox/downloaded/install.sh"
+    # Commands that the fake apt-get materialises instead of a trivial stub.
+    provides_dir="$sandbox/provides"
 
-    mkdir -p "$repo" "$fake_bin" "$sandbox/stub" "$log_dir" "$home_dir"
+    mkdir -p "$repo" "$fake_bin" "$sandbox/stub" "$log_dir" "$home_dir" \
+        "$data_dir" "$sandbox/downloaded" "$sandbox/elsewhere" "$provides_dir"
     cp "$install_script" "$repo/install.sh"
+    cp "$install_script" "$standalone_script"
     cp "$repo_root/.chezmoiroot" "$repo/.chezmoiroot"
     cp -R "$repo_root/packages" "$repo/packages"
     cp -R "$repo_root/home" "$repo/home"
@@ -185,12 +201,14 @@ EOF
 }
 
 # 'install' creates the command each installed package provides, so the next
-# presence check sees it. A package named in APT_FAIL aborts the whole batch,
-# the way apt-get aborts a transaction it cannot satisfy.
+# presence check sees it: either the fake prepared in provides/ or a trivial
+# stub. A package named in APT_FAIL aborts the whole batch, the way apt-get
+# aborts a transaction it cannot satisfy.
 fake_apt_get() {
     write_fake apt-get <<EOF
 bin_dir='$fake_bin'
 map='$sandbox/pkgmap'
+provides='$provides_dir'
 EOF
     cat >>"$fake_bin/apt-get" <<'EOF'
 action=""
@@ -214,7 +232,11 @@ done
 for name in ${names[@]+"${names[@]}"}; do
     while IFS=$'\t' read -r package provided; do
         [[ $package == "$name" ]] || continue
-        printf '#!/bin/sh\nexit 0\n' >"$bin_dir/$provided"
+        if [[ -f $provides/$provided ]]; then
+            cp "$provides/$provided" "$bin_dir/$provided"
+        else
+            printf '#!/bin/sh\nexit 0\n' >"$bin_dir/$provided"
+        fi
         chmod 0755 "$bin_dir/$provided"
     done <"$map"
 done
@@ -248,6 +270,56 @@ fake_chezmoi() {
     write_fake chezmoi <<'EOF'
 exit "${FAKE_CHEZMOI_EXIT:-0}"
 EOF
+}
+
+# Serves the git commands the bootstrap uses: 'clone' copies the sandbox
+# repository instead of reaching GitHub, and the queries about an existing
+# checkout answer from FAKE_GIT_ORIGIN and FAKE_GIT_DIRTY.
+fake_git() {
+    write_fake git <<EOF
+source_repo='$repo'
+EOF
+    cat >>"$fake_bin/git" <<'EOF'
+args=("$@")
+dir=''
+if [[ ${args[0]:-} == '-C' ]]; then
+    dir=${args[1]}
+    args=("${args[@]:2}")
+fi
+
+case ${args[0]:-} in
+clone)
+    if [[ -n ${FAKE_GIT_CLONE_FAIL:-} ]]; then
+        printf 'fatal: simulated clone failure\n' >&2
+        exit 128
+    fi
+    target=${args[-1]}
+    mkdir -p "$target/.git"
+    cp -R "$source_repo"/. "$target"/
+    ;;
+rev-parse)
+    [[ -d $dir/.git ]] || exit 128
+    printf '%s/.git\n' "$dir"
+    ;;
+remote)
+    printf '%s\n' "${FAKE_GIT_ORIGIN:-https://github.com/takano536/dotfiles.git}"
+    ;;
+status)
+    if [[ -n ${FAKE_GIT_DIRTY:-} ]]; then
+        printf ' M home/dot_bashrc\n'
+    fi
+    ;;
+*) ;;
+esac
+exit 0
+EOF
+}
+
+# Moves a fake out of the PATH of the run and into provides/, so that the
+# command is missing until the fake apt-get installs it.
+stash_fake() {
+    local name=$1
+    mv "$fake_bin/$name" "$provides_dir/$name"
 }
 
 # Serves the chezmoi release install.sh asks for. The archive is built once and
@@ -324,24 +396,54 @@ fake_every_command() {
     done < <(tsv_field 4 '' '')
 }
 
-# installer_prefix runs install.sh through a wrapper, e.g. 'unshare -r' for the
-# root check.
+# The environment of every run: a working directory outside the repository,
+# nothing but the fake executables plus a few coreutils on PATH, a sandbox HOME
+# and XDG_DATA_HOME, an injected os-release and a proxy that points at a closed
+# port. installer_prefix runs the whole thing through a wrapper, e.g.
+# 'unshare -r' for the root check.
+sandbox_env() {
+    cd -- "$sandbox/elsewhere" || return 1
+    ${installer_prefix[@]+"${installer_prefix[@]}"} \
+        env -i \
+        PATH="$fake_bin:$sandbox/stub" \
+        HOME="$home_dir" \
+        USER='tester' \
+        XDG_DATA_HOME="$xdg_data_home" \
+        DOTFILES_OS_RELEASE="$sandbox/os-release" \
+        DOTFILES_BOOTSTRAP="${DOTFILES_BOOTSTRAP:-}" \
+        APT_FAIL="${APT_FAIL:-}" \
+        FAKE_CHEZMOI_EXIT="${FAKE_CHEZMOI_EXIT:-}" \
+        FAKE_CURL_FAIL="${FAKE_CURL_FAIL:-}" \
+        FAKE_GIT_ORIGIN="${FAKE_GIT_ORIGIN:-}" \
+        FAKE_GIT_DIRTY="${FAKE_GIT_DIRTY:-}" \
+        FAKE_GIT_CLONE_FAIL="${FAKE_GIT_CLONE_FAIL:-}" \
+        HTTPS_PROXY='http://127.0.0.1:1' \
+        https_proxy='http://127.0.0.1:1' \
+        "$@"
+}
+
+# Repository-local mode: the installer is started from a checkout.
 run_installer() {
     set +e
-    output="$(
-        ${installer_prefix[@]+"${installer_prefix[@]}"} \
-            env -i \
-            PATH="$fake_bin:$sandbox/stub" \
-            HOME="$home_dir" \
-            USER='tester' \
-            DOTFILES_OS_RELEASE="$sandbox/os-release" \
-            APT_FAIL="${APT_FAIL:-}" \
-            FAKE_CHEZMOI_EXIT="${FAKE_CHEZMOI_EXIT:-}" \
-            FAKE_CURL_FAIL="${FAKE_CURL_FAIL:-}" \
-            HTTPS_PROXY='http://127.0.0.1:1' \
-            https_proxy='http://127.0.0.1:1' \
-            "$BASH" "$repo/install.sh" "$@" 2>&1
-    )"
+    output="$(sandbox_env "$BASH" "$repo/install.sh" "$@" </dev/null 2>&1)"
+    status=$?
+    set -e
+}
+
+# Bootstrap mode: only the installer was downloaded, with no repository around
+# it.
+run_installer_standalone() {
+    set +e
+    output="$(sandbox_env "$BASH" "$standalone_script" "$@" </dev/null 2>&1)"
+    status=$?
+    set -e
+}
+
+# Bootstrap mode through a real pipe, like 'curl ... | bash -s -- <options>':
+# the installer has no file of its own and its own text is on stdin.
+run_installer_piped() {
+    set +e
+    output="$(cat -- "$standalone_script" | sandbox_env "$BASH" -s -- "$@" 2>&1)"
     status=$?
     set -e
 }
@@ -455,6 +557,18 @@ test_definition_scope() {
     fi
 }
 
+# install.sh without its comments and without the text of its messages, so that
+# a URL or a word inside an error message cannot look like a command.
+installer_commands() {
+    installer_code | sed -e 's/"[^"]*"//g' -e "s/'[^']*'//g"
+}
+
+# install.sh without its comments. Strings are kept: a URL that is fetched
+# lives in one.
+installer_code() {
+    sed -e 's/^[[:space:]]*#.*//' -e 's/[[:space:]]#[^"'\'']*$//' "$install_script"
+}
+
 test_installer_scope() {
     local hits
     hits="$(grep -Ein '\b(add-apt-repository|apt-add-repository|snap|flatpak|linuxbrew|pacman|dnf|yum)\b' "$install_script" || true)"
@@ -462,7 +576,7 @@ test_installer_scope() {
         fail "install.sh should only use apt-get: $hits"
     fi
 
-    hits="$(grep -Ein '(curl|wget)[^|#]*\|[[:space:]]*(ba)?sh' "$install_script" || true)"
+    hits="$(installer_commands | grep -Ein '(curl|wget)[^|]*\|[[:space:]]*(ba)?sh' || true)"
     if [[ -n $hits ]]; then
         fail "install.sh should never pipe a download into a shell: $hits"
     fi
@@ -474,6 +588,24 @@ test_installer_scope() {
 
     if ! grep -q 'https://github.com/twpayne/chezmoi/releases' "$install_script"; then
         fail 'the chezmoi download should come from the official upstream repository'
+    fi
+
+    # Everything is fetched over HTTPS, and the clone URL is this repository.
+    hits="$(installer_code | grep -Ein 'http://|git://|git@' || true)"
+    if [[ -n $hits ]]; then
+        fail "install.sh should only fetch over HTTPS: $hits"
+    fi
+    if ! grep -q "repo_slug='takano536/dotfiles'" "$install_script" ||
+        ! grep -q "repo_host='github.com'" "$install_script" ||
+        ! grep -q 'repo_url="https://${repo_host}/${repo_slug}.git"' "$install_script"; then
+        fail 'install.sh should clone this repository over HTTPS'
+    fi
+
+    # A checkout of the user is never reset, cleaned, switched or removed.
+    hits="$(installer_commands |
+        grep -Ein '\bgit\b[^|]*\b(reset|clean|checkout|pull|fetch|push)\b|rm -rf[^|]*(repo_root|target)' || true)"
+    if [[ -n $hits ]]; then
+        fail "install.sh should never change an existing checkout: $hits"
     fi
 }
 
@@ -776,6 +908,312 @@ test_skip_chezmoi_install() {
     assert_empty "$(log_of curl)" 'the curl log'
 }
 
+##### Repository bootstrap #####
+
+bootstrap_fakes() {
+    standard_fakes
+    fake_git
+}
+
+# A checkout of this repository at the place a bootstrap run would clone into.
+make_existing_checkout() {
+    mkdir -p "$clone_target/.git"
+    cp -R "$repo"/. "$clone_target"/
+}
+
+clone_leftovers() {
+    local -a leftovers=()
+    shopt -s nullglob dotglob
+    leftovers=("$data_dir"/.dotfiles-clone.*)
+    shopt -u nullglob dotglob
+    printf '%s' "${leftovers[*]-}"
+}
+
+test_bootstrap_clones_and_hands_over() {
+    new_sandbox
+    bootstrap_fakes
+    run_installer_standalone
+    assert_status 0 "$status"
+
+    local git_log
+    git_log="$(log_of git)"
+    assert_contains "$git_log" 'clone --branch main --' 'the git log'
+    assert_contains "$git_log" 'https://github.com/takano536/dotfiles.git' 'the git log'
+    if [[ ! -f $clone_target/.chezmoiroot ]]; then
+        fail "the repository should have been cloned into '$clone_target'"
+    fi
+    assert_empty "$(clone_leftovers)" 'the leftover clone directories'
+
+    # The installer of the clone, not this copy, finishes the run.
+    assert_contains "$output" 'Running the installer of' 'the output'
+    assert_contains "$(log_of chezmoi)" "init --apply --source $clone_target" 'the chezmoi log'
+    assert_contains "$output" 'Done' 'the output'
+}
+
+test_bootstrap_through_a_pipe() {
+    new_sandbox
+    bootstrap_fakes
+    run_installer_piped
+    assert_status 0 "$status"
+    assert_contains "$(log_of git)" 'clone --branch main --' 'the git log'
+    assert_contains "$(log_of chezmoi)" "init --apply --source $clone_target" 'the chezmoi log'
+}
+
+test_bootstrap_options_through_a_pipe() {
+    new_sandbox
+    bootstrap_fakes
+    run_installer_piped --skip-optional
+    assert_status 0 "$status"
+
+    local apt_log package
+    apt_log="$(log_of apt-get)"
+    while read -r package; do
+        assert_not_contains "$apt_log" "$package" 'the apt-get log'
+    done < <(tsv_field 3 'optional' 'apt')
+    assert_contains "$(log_of chezmoi)" 'init --apply' 'the chezmoi log'
+}
+
+# Without XDG_DATA_HOME the clone goes to chezmoi's default source directory.
+test_bootstrap_default_target() {
+    new_sandbox
+    bootstrap_fakes
+    xdg_data_home=''
+    run_installer_standalone
+    assert_status 0 "$status"
+    if [[ ! -f $home_dir/.local/share/chezmoi/.chezmoiroot ]]; then
+        fail 'the repository should have been cloned into ~/.local/share/chezmoi'
+    fi
+}
+
+test_bootstrap_reuses_existing_checkout() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    run_installer_standalone
+    assert_status 0 "$status"
+    assert_contains "$output" 'using the existing checkout' 'the output'
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+    assert_contains "$(log_of chezmoi)" "init --apply --source $clone_target" 'the chezmoi log'
+}
+
+# The same repository over SSH is the same repository, and github.com in the
+# URL is what makes it verifiable.
+test_bootstrap_accepts_an_ssh_remote() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    FAKE_GIT_ORIGIN='git@github.com:takano536/dotfiles.git'
+    run_installer_standalone
+    unset FAKE_GIT_ORIGIN
+    assert_status 0 "$status"
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+    assert_not_contains "$output" 'ssh_config alias' 'the output'
+}
+
+# An ssh_config alias hides the real host, so the checkout is used but the
+# assumption is reported instead of resolving the SSH configuration.
+test_bootstrap_reports_an_alias_remote() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    FAKE_GIT_ORIGIN='git@github-dotfiles:takano536/dotfiles.git'
+    run_installer_standalone
+    unset FAKE_GIT_ORIGIN
+    assert_status 0 "$status"
+    assert_contains "$output" 'ssh_config alias' 'the output'
+    assert_contains "$output" 'github-dotfiles' 'the output'
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+}
+
+# A different host with the same owner and name is not verified either, so it
+# is reported the same way; nothing is fetched from it.
+test_bootstrap_reports_a_foreign_host() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    FAKE_GIT_ORIGIN='https://gitlab.example.com/takano536/dotfiles.git'
+    run_installer_standalone
+    unset FAKE_GIT_ORIGIN
+    assert_status 0 "$status"
+    assert_contains "$output" 'gitlab.example.com' 'the output'
+    assert_contains "$output" 'not github.com' 'the output'
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+}
+
+test_bootstrap_keeps_a_dirty_checkout() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    FAKE_GIT_DIRTY=1
+    run_installer_standalone
+    unset FAKE_GIT_DIRTY
+    assert_status 0 "$status"
+    assert_contains "$output" 'uncommitted changes' 'the output'
+
+    local git_log
+    git_log="$(log_of git)"
+    assert_not_contains "$git_log" 'clone' 'the git log'
+    assert_not_contains "$git_log" 'reset' 'the git log'
+    assert_not_contains "$git_log" 'clean' 'the git log'
+    assert_not_contains "$git_log" 'checkout' 'the git log'
+    assert_contains "$(log_of chezmoi)" 'init --apply' 'the chezmoi log'
+}
+
+test_bootstrap_refuses_another_repository() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    FAKE_GIT_ORIGIN='https://github.com/someone/other-dotfiles.git'
+    run_installer_standalone
+    unset FAKE_GIT_ORIGIN
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'takano536/dotfiles' 'the error message'
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+    # The directory of the user is left exactly as it was.
+    if [[ ! -f $clone_target/.chezmoiroot ]]; then
+        fail 'the existing checkout should not have been touched'
+    fi
+}
+
+test_bootstrap_refuses_a_foreign_directory() {
+    new_sandbox
+    bootstrap_fakes
+    mkdir -p "$clone_target"
+    printf 'mine\n' >"$clone_target/my notes.txt"
+    run_installer_standalone
+    assert_status_not 0 "$status"
+    assert_contains "$output" '.chezmoiroot' 'the error message'
+    assert_not_contains "$(log_of git)" 'clone' 'the git log'
+    if [[ ! -f "$clone_target/my notes.txt" ]]; then
+        fail 'the existing directory should not have been touched'
+    fi
+}
+
+# An empty directory is what a previous attempt or 'mkdir -p' leaves behind, so
+# it is cloned into instead of failing.
+test_bootstrap_clones_into_an_empty_directory() {
+    new_sandbox
+    bootstrap_fakes
+    mkdir -p "$clone_target"
+    run_installer_standalone
+    assert_status 0 "$status"
+    assert_contains "$(log_of git)" 'clone --branch main --' 'the git log'
+    assert_contains "$(log_of chezmoi)" "init --apply --source $clone_target" 'the chezmoi log'
+}
+
+test_bootstrap_clone_failure() {
+    new_sandbox
+    bootstrap_fakes
+    FAKE_GIT_CLONE_FAIL=1
+    run_installer_standalone
+    unset FAKE_GIT_CLONE_FAIL
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'cloning' 'the error message'
+    if [[ -e $clone_target ]]; then
+        fail 'a failed clone must not leave the target directory behind'
+    fi
+    assert_empty "$(clone_leftovers)" 'the leftover clone directories'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+    assert_empty "$(home_entries)" 'the sandbox home'
+}
+
+test_bootstrap_installs_git() {
+    new_sandbox
+    bootstrap_fakes
+    stash_fake git
+    run_installer_standalone
+    assert_status 0 "$status"
+    assert_contains "$output" 'git is not installed' 'the output'
+    assert_contains "$(log_of apt-get)" 'git ca-certificates' 'the apt-get log'
+    assert_contains "$(log_of git)" 'clone --branch main --' 'the git log'
+    assert_contains "$(log_of chezmoi)" "init --apply --source $clone_target" 'the chezmoi log'
+}
+
+test_bootstrap_without_git_and_skip_packages() {
+    new_sandbox
+    bootstrap_fakes
+    stash_fake git
+    run_installer_standalone --skip-packages
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'git is needed' 'the error message'
+    assert_empty "$(log_of apt-get)" 'the apt-get log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+    if [[ -e $clone_target ]]; then
+        fail 'nothing should have been cloned'
+    fi
+}
+
+test_bootstrap_dry_run() {
+    new_sandbox
+    bootstrap_fakes
+    run_installer_standalone --dry-run
+    assert_status 0 "$status"
+    assert_contains "$output" 'would clone https://github.com/takano536/dotfiles.git' 'the plan'
+    assert_contains "$output" 'Dry run complete' 'the plan'
+    assert_empty "$(log_of git)" 'the git log'
+    assert_empty "$(log_of apt-get)" 'the apt-get log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+    assert_empty "$(home_entries)" 'the sandbox home'
+    if [[ -e $clone_target ]]; then
+        fail 'a dry run must not clone anything'
+    fi
+}
+
+# A dry run with the repository already there can show the whole plan.
+test_bootstrap_dry_run_with_a_checkout() {
+    new_sandbox
+    bootstrap_fakes
+    make_existing_checkout
+    run_installer_standalone --dry-run
+    assert_status 0 "$status"
+    assert_contains "$output" 'would run:' 'the plan'
+    assert_contains "$output" 'apt-get install' 'the plan'
+    assert_empty "$(log_of apt-get)" 'the apt-get log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+}
+
+test_bootstrap_second_run_clones_once() {
+    new_sandbox
+    bootstrap_fakes
+    run_installer_standalone
+    assert_status 0 "$status"
+    run_installer_standalone
+    assert_status 0 "$status"
+
+    local clones
+    clones="$(grep -c '^clone' <<<"$(log_of git)" || true)"
+    if [[ $clones != '1' ]]; then
+        fail "the repository should be cloned exactly once, was cloned $clones times"
+    fi
+    assert_contains "$output" 'using the existing checkout' 'the second run'
+}
+
+test_bootstrap_unsupported_distro() {
+    new_sandbox
+    bootstrap_fakes
+    write_os_release 'ubuntu' '24.04'
+    run_installer_standalone
+    assert_status_not 0 "$status"
+    assert_contains "$output" 'Debian' 'the error message'
+    assert_contains "$output" 'https://github.com/takano536/dotfiles.git' 'the error message'
+    assert_empty "$(log_of git)" 'the git log'
+    assert_empty "$(log_of apt-get)" 'the apt-get log'
+}
+
+# The installer of a clone must never start another bootstrap: that would be a
+# loop between two copies of this script.
+test_bootstrap_does_not_loop() {
+    new_sandbox
+    bootstrap_fakes
+    DOTFILES_BOOTSTRAP=1
+    run_installer_standalone
+    unset DOTFILES_BOOTSTRAP
+    assert_status_not 0 "$status"
+    assert_empty "$(log_of git)" 'the git log'
+    assert_empty "$(log_of chezmoi)" 'the chezmoi log'
+}
+
 ##### Runner #####
 
 printf 'install.sh contract tests\n\n'
@@ -807,6 +1245,26 @@ run_test 'a second run installs nothing' test_idempotent_run
 run_test 'chezmoi is fetched from its official release' test_chezmoi_from_upstream
 run_test 'a failed chezmoi download fails the run' test_chezmoi_download_failure
 run_test '--skip-chezmoi-install fails instead of downloading' test_skip_chezmoi_install
+run_test 'a standalone installer clones the repository and hands over' test_bootstrap_clones_and_hands_over
+run_test 'the installer works when it is piped into bash' test_bootstrap_through_a_pipe
+run_test 'options survive a run through a pipe' test_bootstrap_options_through_a_pipe
+run_test 'a bootstrap clones into the default chezmoi source directory' test_bootstrap_default_target
+run_test 'an existing checkout of this repository is reused' test_bootstrap_reuses_existing_checkout
+run_test 'an existing checkout with an SSH remote is reused' test_bootstrap_accepts_an_ssh_remote
+run_test 'an ssh_config alias remote is reported, not trusted silently' test_bootstrap_reports_an_alias_remote
+run_test 'a look-alike host is reported, not trusted silently' test_bootstrap_reports_a_foreign_host
+run_test 'a checkout with local changes is left untouched' test_bootstrap_keeps_a_dirty_checkout
+run_test 'a checkout of another repository stops the run' test_bootstrap_refuses_another_repository
+run_test 'a foreign directory at the target stops the run' test_bootstrap_refuses_a_foreign_directory
+run_test 'an empty directory at the target is cloned into' test_bootstrap_clones_into_an_empty_directory
+run_test 'a failed clone leaves nothing behind' test_bootstrap_clone_failure
+run_test 'a bootstrap installs git when it is missing' test_bootstrap_installs_git
+run_test 'a bootstrap without git and --skip-packages fails' test_bootstrap_without_git_and_skip_packages
+run_test 'a bootstrap dry run clones nothing' test_bootstrap_dry_run
+run_test 'a bootstrap dry run with a checkout shows the whole plan' test_bootstrap_dry_run_with_a_checkout
+run_test 'a second bootstrap run clones nothing' test_bootstrap_second_run_clones_once
+run_test 'a bootstrap on another distribution stops before git' test_bootstrap_unsupported_distro
+run_test 'a bootstrap never hands over to itself twice' test_bootstrap_does_not_loop
 
 printf '\n%s tests, %s failed\n' "$tests_run" "$tests_failed"
 if ((tests_failed > 0)); then

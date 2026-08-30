@@ -174,3 +174,27 @@ jobs:
               echo '--dry-run installed chezmoi' >&2
               exit 1
           fi
+
+      # The only test that uses the real remote: it proves that the clone URL
+      # and the branch install.sh names exist and that a machine without a
+      # checkout can bootstrap from the piped installer. Packages are still not
+      # installed, and everything lands in a throwaway home.
+      - name: Bootstrap without a checkout, over the real remote
+        run: |
+          set -o pipefail
+          apt-get update -qq
+          apt-get install -y --no-install-recommends git ca-certificates curl >/dev/null
+          cp ./install.sh /tmp/install.sh
+          chmod 0755 /tmp/install.sh
+          # A path with a space, because the bootstrap has to quote it.
+          install -d -o tester /tmp/bootstrap-home '/tmp/bootstrap data'
+          su tester -c 'HOME=/tmp/bootstrap-home XDG_DATA_HOME="/tmp/bootstrap data" bash -s -- --skip-packages' </tmp/install.sh
+          test -f '/tmp/bootstrap data/chezmoi/.chezmoiroot'
+          test -x /tmp/bootstrap-home/.local/bin/chezmoi
+          test -f /tmp/bootstrap-home/.bashrc
+
+          # A second run reuses the clone instead of cloning again. Its output
+          # goes to a file: 'grep -q' would close the pipe on the first match
+          # and the installer would die of SIGPIPE.
+          su tester -c 'HOME=/tmp/bootstrap-home XDG_DATA_HOME="/tmp/bootstrap data" bash -s -- --skip-packages' </tmp/install.sh | tee /tmp/second-run.log
+          grep -q 'using the existing checkout' /tmp/second-run.log

@@ -446,9 +446,10 @@ Describe 'install.ps1' {
                     ForEach-Object { $_.Value })
             $names = @($packages.Required | ForEach-Object { $_.Scoop }) +
             @($packages.Optional | ForEach-Object { $_.Scoop }) + @($packages.PSModules)
-            # chezmoi and pwsh are commands install.ps1 drives itself.
+            # chezmoi, pwsh and git are commands install.ps1 drives itself: git
+            # is installed by the bootstrap before the package list exists.
             foreach ($name in $names) {
-                if (@('chezmoi', 'pwsh') -contains $name) { continue }
+                if (@('chezmoi', 'pwsh', 'git') -contains $name) { continue }
                 $literals | Should -Not -Contain $name
             }
         }
@@ -466,6 +467,413 @@ Describe 'install.ps1' {
                     (Join-Path $PSScriptRoot 'TestHelpers.ps1'))) {
                 Get-Content -LiteralPath $path -Raw | Should -Not -Match 'winget'
             }
+        }
+    }
+}
+
+Describe 'install.ps1 bootstrap' {
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
+
+        $packages = Import-PowerShellDataFile -LiteralPath (
+            Join-Path (Join-Path $RepoRoot 'packages') 'windows.psd1')
+        $optionalNames = @($packages.Optional | ForEach-Object { $_.Scoop })
+        $cloneUrl = 'https://github.com/takano536/dotfiles.git'
+
+        function New-BootstrapSandbox {
+            <#
+                A sandbox in which only the downloaded installer exists: the
+                fake git clones the repository copy instead of reaching GitHub,
+                and a fake scoop and chezmoi carry the rest of the run.
+            #>
+            param(
+                [string]$Origin,
+                [switch]$Dirty,
+                [switch]$FailClone,
+                [switch]$WithoutScoop
+            )
+
+            $sandbox = New-Sandbox
+            $gitParameters = @{ Directory = $sandbox.Bin; SourceRepo = $sandbox.Repo }
+            if ($Origin) { $gitParameters['Origin'] = $Origin }
+            if ($Dirty) { $gitParameters['Dirty'] = $true }
+            if ($FailClone) { $gitParameters['FailClone'] = $true }
+
+            $logs = @{
+                Git     = New-FakeGit @gitParameters
+                Chezmoi = New-FakeExecutable -Directory $sandbox.Bin -Name 'chezmoi'
+                Scoop   = $null
+            }
+            if (-not $WithoutScoop) {
+                $logs['Scoop'] = New-FakeScoop -Directory $sandbox.Bin -ScoopRoot $sandbox.Scoop `
+                    -ProvideFrom $sandbox.Provides
+            }
+            New-FakePwsh -Sandbox $sandbox | Out-Null
+
+            $sandbox | Add-Member -NotePropertyName Logs -NotePropertyValue $logs
+            return $sandbox
+        }
+
+        function Copy-RepositoryToCloneTarget {
+            <#
+                An existing checkout of this repository at the place a bootstrap
+                run would clone into.
+            #>
+            param($Sandbox)
+
+            New-Item -ItemType Directory -Force -Path (Join-Path $Sandbox.CloneTarget '.git') | Out-Null
+            Get-ChildItem -LiteralPath $Sandbox.Repo -Force |
+                Copy-Item -Destination $Sandbox.CloneTarget -Recurse -Force
+        }
+
+        function Move-FakeToProvides {
+            <#
+                Takes a fake off the PATH of the run, so the command is missing
+                until the fake scoop installs it.
+            #>
+            param($Sandbox, [string]$Name)
+
+            foreach ($candidate in @("$Name.cmd", $Name)) {
+                $source = Join-Path $Sandbox.Bin $candidate
+                if (Test-Path -LiteralPath $source -PathType Leaf) {
+                    Move-Item -LiteralPath $source -Destination (Join-Path $Sandbox.Provides $candidate)
+                }
+            }
+        }
+
+        function Get-CloneLeftover {
+            param($Sandbox)
+
+            $parent = Split-Path -Parent $Sandbox.CloneTarget
+            $entries = @(Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -like '.dotfiles-clone-*' })
+            Write-Output $entries -NoEnumerate
+        }
+    }
+
+    Context 'a standalone run' {
+
+        BeforeAll {
+            $sandbox = New-BootstrapSandbox
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+        }
+
+        AfterAll {
+            Remove-Sandbox -Sandbox $sandbox
+        }
+
+        It 'clones this repository over HTTPS' {
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'Fetching the dotfiles repository'
+            $calls = (Get-FakeInvocation -LogPath $sandbox.Logs.Git) -join "`n"
+            $calls | Should -Match ([regex]::Escape('clone --branch main --'))
+            $calls | Should -Match ([regex]::Escape($cloneUrl))
+            Join-Path $sandbox.CloneTarget '.chezmoiroot' | Should -Exist
+            (Get-CloneLeftover -Sandbox $sandbox).Count | Should -Be 0
+        }
+
+        It 'hands the run over to the installer of the clone' {
+            $result.StdOut | Should -Match 'Running the installer of'
+            $result.StdOut | Should -Match 'Applying dotfiles with chezmoi'
+            $result.StdOut | Should -Match 'Done'
+            $chezmoiCalls = Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi
+            $chezmoiCalls | Should -HaveCount 1
+            $chezmoiCalls[0] | Should -Match ([regex]::Escape($sandbox.CloneTarget))
+        }
+
+        It 'clones only once when it is run again' {
+            $second = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $second.ExitCode | Should -Be 0
+            $second.StdOut | Should -Match 'using the existing checkout'
+            $clones = @((Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                    Where-Object { $_ -like 'clone *' })
+            $clones | Should -HaveCount 1
+        }
+    }
+
+    Context 'switches survive the hand over' {
+
+        BeforeAll {
+            $sandbox = New-BootstrapSandbox
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone -Arguments @('-SkipOptional')
+        }
+
+        AfterAll {
+            Remove-Sandbox -Sandbox $sandbox
+        }
+
+        It 'installs the required packages only' {
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'Optional CLI and TUI packages skipped'
+            $installed = @((Get-FakeInvocation -LogPath $sandbox.Logs.Scoop) |
+                    Where-Object { $_ -like 'install *' })
+            foreach ($name in $optionalNames) {
+                $installed | Should -Not -Contain "install $name"
+            }
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi) | Should -HaveCount 1
+        }
+    }
+
+    Context 'an existing checkout' {
+
+        AfterEach {
+            Remove-Sandbox -Sandbox $sandbox
+        }
+
+        It 'is used as it is, without cloning' {
+            $sandbox = New-BootstrapSandbox
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'using the existing checkout'
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                Should -Not -Contain 'clone'
+            @((Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                    Where-Object { $_ -like 'clone *' }) | Should -HaveCount 0
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi)[0] |
+                Should -Match ([regex]::Escape($sandbox.CloneTarget))
+        }
+
+        It 'is recognised through a github.com SSH remote as well' {
+            $sandbox = New-BootstrapSandbox -Origin 'git@github.com:takano536/dotfiles.git'
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'using the existing checkout'
+            $result.StdOut | Should -Not -Match 'ssh_config alias'
+        }
+
+        It 'reports an ssh_config alias instead of trusting it silently' {
+            $sandbox = New-BootstrapSandbox -Origin 'git@github-dotfiles:takano536/dotfiles.git'
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'using the existing checkout'
+            $result.StdOut | Should -Match 'ssh_config alias'
+            $result.StdOut | Should -Match 'github-dotfiles'
+        }
+
+        It 'reports a look-alike host instead of trusting it silently' {
+            $sandbox = New-BootstrapSandbox -Origin 'https://gitlab.example.com/takano536/dotfiles.git'
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'gitlab\.example\.com'
+            $result.StdOut | Should -Match ([regex]::Escape('not github.com'))
+        }
+
+        It 'keeps local changes and pulls nothing' {
+            $sandbox = New-BootstrapSandbox -Dirty
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'uncommitted changes'
+            $calls = (Get-FakeInvocation -LogPath $sandbox.Logs.Git) -join "`n"
+            foreach ($forbidden in @('clone', 'reset', 'clean', 'checkout', 'pull', 'fetch')) {
+                $calls | Should -Not -Match "\b$forbidden\b"
+            }
+        }
+
+        It 'stops when it belongs to another repository' {
+            $sandbox = New-BootstrapSandbox -Origin 'https://github.com/someone/other-dotfiles.git'
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match ([regex]::Escape('takano536/dotfiles'))
+            @((Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                    Where-Object { $_ -like 'clone *' }) | Should -HaveCount 0
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi).Count | Should -Be 0
+            # The directory of the user is left exactly as it was.
+            Join-Path $sandbox.CloneTarget '.chezmoiroot' | Should -Exist
+        }
+
+        It 'stops when the target holds something else' {
+            $sandbox = New-BootstrapSandbox
+            New-Item -ItemType Directory -Force -Path $sandbox.CloneTarget | Out-Null
+            $keep = Join-Path $sandbox.CloneTarget 'my notes.txt'
+            Set-Content -LiteralPath $keep -Value 'mine'
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match ([regex]::Escape('.chezmoiroot'))
+            @((Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                    Where-Object { $_ -like 'clone *' }) | Should -HaveCount 0
+            $keep | Should -Exist
+        }
+
+        It 'clones into an empty directory at the target' {
+            $sandbox = New-BootstrapSandbox
+            New-Item -ItemType Directory -Force -Path $sandbox.CloneTarget | Out-Null
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            Join-Path $sandbox.CloneTarget '.chezmoiroot' | Should -Exist
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi) | Should -HaveCount 1
+        }
+    }
+
+    Context 'the bootstrap fails safely' {
+
+        AfterEach {
+            Remove-Sandbox -Sandbox $sandbox
+        }
+
+        It 'leaves nothing behind when the clone fails' {
+            $sandbox = New-BootstrapSandbox -FailClone
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match 'Cloning'
+            $sandbox.CloneTarget | Should -Not -Exist
+            (Get-CloneLeftover -Sandbox $sandbox).Count | Should -Be 0
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi).Count | Should -Be 0
+            # Only the empty parent of the source directory may exist.
+            @(Get-ChildItem -LiteralPath (Split-Path -Parent $sandbox.CloneTarget) -Force).Count |
+                Should -Be 0
+        }
+
+        It 'installs git with Scoop when git is missing' {
+            $sandbox = New-BootstrapSandbox
+            Move-FakeToProvides -Sandbox $sandbox -Name 'git'
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Be 0
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Scoop) | Should -Contain 'install git'
+            @((Get-FakeInvocation -LogPath $sandbox.Logs.Git) |
+                    Where-Object { $_ -like 'clone *' }) | Should -HaveCount 1
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi) | Should -HaveCount 1
+        }
+
+        It 'stops when git is missing and -SkipPackages was given' {
+            $sandbox = New-BootstrapSandbox
+            Move-FakeToProvides -Sandbox $sandbox -Name 'git'
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone -Arguments @('-SkipPackages')
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match 'git is needed'
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Scoop).Count | Should -Be 0
+            $sandbox.CloneTarget | Should -Not -Exist
+        }
+
+        It 'stops when Scoop cannot be bootstrapped for git' {
+            # HTTPS_PROXY points at a closed port, so no Scoop can be fetched.
+            $sandbox = New-BootstrapSandbox -WithoutScoop
+            Move-FakeToProvides -Sandbox $sandbox -Name 'git'
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match 'Scoop could not be bootstrapped'
+            $sandbox.CloneTarget | Should -Not -Exist
+        }
+
+        It 'never hands over to itself twice' {
+            $sandbox = New-BootstrapSandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone `
+                -ExtraEnvironment @{ DOTFILES_BOOTSTRAP = '1' }
+
+            $result.ExitCode | Should -Not -Be 0
+            $result.StdErr | Should -Match 'stopped instead of cloning again'
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Git).Count | Should -Be 0
+        }
+    }
+
+    Context '-DryRun' {
+
+        AfterEach {
+            Remove-Sandbox -Sandbox $sandbox
+        }
+
+        It 'clones nothing and says so' {
+            $sandbox = New-BootstrapSandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone -Arguments @('-DryRun')
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match ([regex]::Escape("would clone $cloneUrl"))
+            $result.StdOut | Should -Match 'Dry run complete'
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Git).Count | Should -Be 0
+            (Get-FakeInvocation -LogPath $sandbox.Logs.Chezmoi).Count | Should -Be 0
+            $sandbox.CloneTarget | Should -Not -Exist
+            (Get-SandboxHomeEntry -Sandbox $sandbox).Count | Should -Be 0
+        }
+
+        It 'shows the whole plan when the repository is already there' {
+            $sandbox = New-BootstrapSandbox
+            Copy-RepositoryToCloneTarget -Sandbox $sandbox
+
+            $result = Invoke-InstallScript -Sandbox $sandbox -Standalone -Arguments @('-DryRun')
+
+            $result.ExitCode | Should -Be 0
+            $result.StdOut | Should -Match 'would install with scoop:'
+            $result.StdOut | Should -Match 'Dry run complete'
+            @((Get-FakeInvocation -LogPath $sandbox.Logs.Scoop) |
+                    Where-Object { $_ -like 'install *' }) | Should -HaveCount 0
+        }
+    }
+
+    Context 'the bootstrap contract' {
+
+        BeforeAll {
+            $installPath = Join-Path $RepoRoot 'install.ps1'
+            $readmePath = Join-Path $RepoRoot 'README.md'
+            $rawUrl = 'https://raw.githubusercontent.com/takano536/dotfiles/main/install.ps1'
+        }
+
+        It 'fetches over HTTPS only' {
+            $text = Get-Content -LiteralPath $installPath -Raw
+            $text | Should -Match ([regex]::Escape($cloneUrl))
+            $text | Should -Not -Match 'http://'
+            $text | Should -Not -Match 'git://'
+        }
+
+        It 'never resets, cleans or removes an existing checkout' {
+            # Comments and message texts are not commands, so only the command
+            # elements of the syntax tree are inspected.
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+                $installPath, [ref]$null, [ref]$null)
+            $commands = $ast.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.CommandAst]
+                }, $true)
+            # Bare words are the arguments of a command; a word inside a quoted
+            # message is not.
+            $bareWords = @($commands |
+                    ForEach-Object { $_.CommandElements } |
+                    Where-Object {
+                        $_ -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                        $_.StringConstantType -eq 'BareWord'
+                    } | ForEach-Object { $_.Value })
+            foreach ($forbidden in @('reset', 'clean', 'checkout', 'pull', 'fetch', 'push')) {
+                $bareWords | Should -Not -Contain $forbidden
+            }
+            $bareWords | Should -Contain 'clone'
+        }
+
+        It 'is documented in the README with the raw URL of this file' {
+            $readme = Get-Content -LiteralPath $readmePath -Raw
+            $readme | Should -Match ([regex]::Escape($rawUrl))
+            $readme | Should -Match ([regex]::Escape('https://raw.githubusercontent.com/takano536/dotfiles/main/install.sh'))
         }
     }
 }
