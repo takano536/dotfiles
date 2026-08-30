@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 #
-# Bootstraps a Debian GNU/Linux 13 (trixie) machine from this chezmoi source
-# repository: installs the packages listed in packages/linux.tsv with apt,
-# makes sure chezmoi is available and runs 'chezmoi init --apply' with this
-# repository as the chezmoi source directory. Safe to run repeatedly.
+# Bootstraps a Debian GNU/Linux 13 (trixie) machine from the takano536/dotfiles
+# chezmoi source repository: installs the packages listed in packages/linux.tsv
+# with apt, makes sure chezmoi is available and runs 'chezmoi init --apply' with
+# the repository as the chezmoi source directory. Safe to run repeatedly.
+#
+# It works in two modes and decides which one applies on its own:
+#
+#   repository-local  started from a checkout, recognised by the .chezmoiroot
+#                     file next to it. That checkout is used as it is and
+#                     nothing is cloned.
+#   bootstrap         started on its own, without a repository around it:
+#                         curl -fsSL <raw url of install.sh> | bash
+#                     The repository is then cloned into chezmoi's default
+#                     source directory and the install.sh of the clone takes
+#                     over the rest of the run.
 #
 #     bash ./install.sh [--dry-run] [--skip-packages] [--skip-optional]
 #                       [--skip-chezmoi-install] [--help]
@@ -26,6 +37,25 @@ readonly supported_version_id='13'
 # version on every machine, and it avoids parsing the GitHub API.
 readonly chezmoi_version='2.72.0'
 readonly chezmoi_release_url="https://github.com/twpayne/chezmoi/releases/download/v${chezmoi_version}"
+
+# The repository this installer belongs to. An existing checkout is matched on
+# owner and repository name; the host is compared separately, because the same
+# repository is cloned over HTTPS, over SSH or through an ssh_config alias whose
+# real host cannot be resolved from the URL.
+readonly repo_slug='takano536/dotfiles'
+readonly repo_host='github.com'
+readonly repo_url="https://${repo_host}/${repo_slug}.git"
+readonly repo_branch='main'
+
+# A bootstrap run has to clone before it can read packages/linux.tsv, so these
+# two packages are named here instead of in the package definition. git is a
+# required package there as well; ca-certificates provides the HTTPS trust the
+# clone needs.
+readonly bootstrap_packages=(git ca-certificates)
+
+# Set for the install.sh of a fresh clone, so a clone that still does not look
+# like this repository fails instead of cloning again.
+readonly bootstrap_marker='DOTFILES_BOOTSTRAP'
 
 dry_run=0
 skip_packages=0
@@ -50,6 +80,8 @@ apt_prefix=()
 apt_updated=0
 chezmoi_bin=''
 tmp_dir=''
+clone_tmp_dir=''
+repo_root=''
 
 ##### Output #####
 
@@ -71,13 +103,30 @@ die() {
 # line with the location instead of letting bash die silently.
 trap 'status=$?; printf "%s: unexpected failure at line %s (exit %s). Nothing after that step ran.\n" "$script_name" "$LINENO" "$status" >&2; exit "$status"' ERR
 
-trap 'if [[ -n ${tmp_dir:-} && -d ${tmp_dir:-} ]]; then rm -rf -- "$tmp_dir"; fi' EXIT
+# Both temporary directories are private to this run: the chezmoi download and
+# an unfinished clone. Removing them can never touch the clone target, because
+# a finished clone is moved out of clone_tmp_dir first.
+cleanup_tmp_dirs() {
+    local dir
+    for dir in "${tmp_dir:-}" "${clone_tmp_dir:-}"; do
+        if [[ -n $dir && -d $dir ]]; then
+            rm -rf -- "$dir"
+        fi
+    done
+}
+
+trap cleanup_tmp_dirs EXIT
+# An interrupted download or clone must not leave its temporary directory in
+# the home directory of the user.
+trap 'cleanup_tmp_dirs; exit 130' INT TERM HUP
 
 usage() {
     cat <<EOF
 Usage: bash ./install.sh [options]
 
-Bootstraps Debian ${supported_version_id} from this chezmoi source repository.
+Bootstraps Debian ${supported_version_id} from the ${repo_slug} chezmoi source
+repository. Started from a checkout it uses that checkout; started on its own
+it clones ${repo_url} into chezmoi's source directory first.
 
 Options:
   --dry-run               Print the plan; install nothing, download nothing and
@@ -124,11 +173,48 @@ parse_args() {
 
 ##### Repository #####
 
-# Resolved from the location of this script, not from the working directory,
-# so 'bash /some/where/dotfiles/install.sh' works from anywhere.
-resolve_repo() {
-    repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# The directory of this script, or nothing when the script has no file of its
+# own: 'curl ... | bash' leaves BASH_SOURCE[0] pointing at no readable file.
+script_dir() {
+    local source=${BASH_SOURCE[0]:-}
+    if [[ -z $source || ! -f $source ]]; then
+        return 0
+    fi
+    (cd -- "$(dirname -- "$source")" && pwd -P)
+}
 
+# .chezmoiroot is the marker of this repository. A checkout that has it but is
+# missing other files is still this repository, and it has to fail with that
+# problem instead of being replaced by a fresh clone somewhere else.
+is_repo_dir() { [[ -f $1/.chezmoiroot ]]; }
+
+# What a freshly cloned or adopted checkout has to provide before this run
+# hands over to it.
+is_complete_repo_dir() {
+    [[ -f $1/.chezmoiroot && -f $1/install.sh && -f $1/packages/linux.tsv ]]
+}
+
+# Where a bootstrap run puts the repository: chezmoi's own default source
+# directory, so that 'chezmoi apply' and 'chezmoi update' keep working without
+# any extra configuration afterwards.
+default_source_root() {
+    printf '%s/chezmoi' "${XDG_DATA_HOME:-$HOME/.local/share}"
+}
+
+# Repository-local mode resolves the repository from the location of this
+# script, not from the working directory, so 'bash /some/where/install.sh'
+# works from anywhere. Everything else is a bootstrap run.
+resolve_repo() {
+    local dir
+    dir="$(script_dir)"
+    if [[ -n $dir ]] && is_repo_dir "$dir"; then
+        repo_root=$dir
+        return 0
+    fi
+    return 1
+}
+
+read_repo_layout() {
     local chezmoi_root_file="$repo_root/.chezmoiroot"
     if [[ ! -f $chezmoi_root_file ]]; then
         die "'$chezmoi_root_file' was not found, so '$repo_root' is not this dotfiles repository. Run install.sh from the repository it was cloned into."
@@ -152,6 +238,198 @@ resolve_repo() {
     if [[ ! -f $package_file ]]; then
         die "the package list '$package_file' was not found. Check out the repository again."
     fi
+}
+
+##### Repository acquisition #####
+
+# 'owner/repo', lower cased, from any of the URL forms git understands. Used to
+# recognise an existing checkout of this repository without insisting on the
+# exact URL it was cloned with.
+remote_slug() {
+    local url=${1%/}
+    url=${url%.git}
+
+    local name=${url##*/}
+    local rest=${url%/*}
+    # The owner is separated from the host by '/' in HTTPS URLs and by ':' in
+    # SSH URLs, so both are accepted here.
+    local owner=${rest##*[:/]}
+
+    if [[ -z $name || -z $owner || $rest == "$url" ]]; then
+        return 0
+    fi
+    printf '%s/%s' "${owner,,}" "${name,,}"
+}
+
+# The host of a remote URL, lower cased: 'https://host/owner/repo',
+# 'ssh://git@host/owner/repo' and 'git@host:owner/repo' all resolve to 'host'.
+# An ssh_config alias resolves to the alias, which is exactly what cannot be
+# checked without reading the SSH configuration.
+remote_host() {
+    local rest=$1
+    rest=${rest#*://}
+    rest=${rest#*@}
+    rest=${rest%%[:/]*}
+    printf '%s' "${rest,,}"
+}
+
+# git is one of the required packages, but a bootstrap run needs it before it
+# can read the package definition, so it is installed from here. The installer
+# of the clone runs 'apt-get update' once more in its own process; that is the
+# price of handing over, and only this path pays it.
+ensure_git_for_clone() {
+    if command -v git >/dev/null 2>&1; then
+        info "git: $(command -v git)"
+        return 0
+    fi
+
+    if ((skip_packages)); then
+        die "git is needed to clone ${repo_url}, but --skip-packages was given. Install git ('sudo apt-get install git'), or clone the repository yourself and run its install.sh --skip-packages."
+    fi
+
+    info "git is not installed, installing ${bootstrap_packages[*]}"
+    require_apt
+    require_apt_privileges
+    apt_update_once
+    if ! apt_get install -y --no-install-recommends "${bootstrap_packages[@]}"; then
+        die "installing ${bootstrap_packages[*]} failed, so ${repo_url} cannot be cloned. Read the apt-get output above, or clone the repository yourself and run its install.sh."
+    fi
+    if ! command -v git >/dev/null 2>&1; then
+        die "git is still not callable after the installation, so ${repo_url} cannot be cloned. Nothing else was changed."
+    fi
+    info "git: $(command -v git)"
+}
+
+# A directory that is already there is never deleted, moved or reset: it may be
+# the user's own checkout with unpushed work. Returns 0 when it can be used as
+# it is, 1 when it is empty and can be cloned into, and fails the run in every
+# other case, with the way out in the message.
+adopt_existing_checkout() {
+    local dir=$1
+
+    if [[ ! -d $dir ]]; then
+        die "'$dir' exists but is not a directory, so the dotfiles cannot be cloned there. Move it aside, or clone the repository yourself and run its install.sh."
+    fi
+
+    local -a entries=()
+    shopt -s nullglob dotglob
+    entries=("$dir"/*)
+    shopt -u nullglob dotglob
+    if ((${#entries[@]} == 0)); then
+        return 1
+    fi
+
+    if ! is_complete_repo_dir "$dir"; then
+        die "'$dir' already exists and does not contain this dotfiles repository (.chezmoiroot, install.sh and packages/linux.tsv). Nothing was changed. Inspect it, then move it aside and re-run, or run install.sh from your own checkout."
+    fi
+
+    # Without git the checkout cannot be verified, but its layout already
+    # matches; the run continues and reports that it could not check.
+    if ! command -v git >/dev/null 2>&1; then
+        note "the checkout in $dir was not verified because git is not installed yet."
+        return 0
+    fi
+
+    if ! git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+        die "'$dir' contains the dotfiles but is not a git repository, so it cannot be updated later. Move it aside and re-run to get a clone, or run install.sh from your own checkout."
+    fi
+
+    local origin slug host
+    origin="$(git -C "$dir" remote get-url origin 2>/dev/null || true)"
+    slug="$(remote_slug "$origin")"
+    if [[ $slug != "$repo_slug" ]]; then
+        die "'$dir' is a checkout of '${origin:-an unknown remote}', not of ${repo_slug}. Nothing was changed. Point 'origin' at ${repo_url}, or move that directory aside and re-run."
+    fi
+
+    info "using the existing checkout in $dir"
+    # Nothing is fetched or reset here, so a host that only looks like the
+    # expected one cannot change the checkout; it is reported instead of
+    # resolving the SSH configuration to find out what the alias points at.
+    host="$(remote_host "$origin")"
+    if [[ $host != "$repo_host" ]]; then
+        note "the origin of $dir is '${origin}', which names ${repo_slug} but not ${repo_host}; it is used as it is, on the assumption that '${host}' is an ssh_config alias for ${repo_host}."
+    fi
+    if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
+        note "the checkout in $dir has uncommitted changes; nothing was pulled and they were left untouched."
+    fi
+    return 0
+}
+
+# Cloned into a private temporary directory next to the target and moved into
+# place afterwards, so an interrupted clone leaves nothing behind at the target
+# and an existing directory is never overwritten.
+clone_repo() {
+    local target=$1 parent
+    parent="$(dirname -- "$target")"
+
+    mkdir -p -- "$parent"
+    if ! clone_tmp_dir="$(mktemp -d -- "$parent/.dotfiles-clone.XXXXXX")"; then
+        die "a temporary directory for the clone could not be created in '$parent'. Nothing was changed."
+    fi
+
+    info "git clone ${repo_url} (branch ${repo_branch})"
+    # GIT_TERMINAL_PROMPT keeps git from asking for credentials: this is a
+    # public repository over HTTPS, and a bootstrap run may have no terminal.
+    if ! GIT_TERMINAL_PROMPT=0 git clone --branch "$repo_branch" -- "$repo_url" "$clone_tmp_dir/repo"; then
+        die "cloning ${repo_url} failed and '$target' was not created. Check the network connection and re-run, or clone the repository yourself and run its install.sh."
+    fi
+    if ! is_complete_repo_dir "$clone_tmp_dir/repo"; then
+        die "the clone of ${repo_url} does not contain .chezmoiroot, install.sh and packages/linux.tsv, so it was discarded. Nothing was changed."
+    fi
+
+    # An empty directory at the target is what 'mkdir -p' or an interrupted
+    # attempt leaves behind, and it holds nothing that could be lost.
+    if [[ -d $target ]]; then
+        rmdir -- "$target" 2>/dev/null || true
+    fi
+    if [[ -e $target ]]; then
+        die "'$target' appeared while cloning, so the clone was discarded instead of overwriting it. Re-run install.sh."
+    fi
+    if ! mv -- "$clone_tmp_dir/repo" "$target"; then
+        die "moving the clone to '$target' failed. The clone was discarded and nothing was changed."
+    fi
+
+    rm -rf -- "$clone_tmp_dir"
+    clone_tmp_dir=''
+    note "${repo_slug} was cloned into $target."
+}
+
+acquire_repo() {
+    if [[ -n ${!bootstrap_marker:-} ]]; then
+        die "the clone this installer handed over to does not look like ${repo_slug} either, so the bootstrap stopped instead of cloning again. Clone ${repo_url} yourself and run its install.sh."
+    fi
+
+    local target
+    target="$(default_source_root)"
+
+    if [[ -e $target ]] && adopt_existing_checkout "$target"; then
+        repo_root=$target
+        return 0
+    fi
+
+    if ((dry_run)); then
+        info "would clone ${repo_url} (branch ${repo_branch}) into ${target}"
+        info "the full plan needs the repository; clone it and run 'bash install.sh --dry-run' inside the clone"
+        return 1
+    fi
+
+    ensure_git_for_clone
+    clone_repo "$target"
+    repo_root=$target
+}
+
+# The repository is the source of truth for the installer, so the rest of the
+# run is done by the install.sh of the clone instead of by this copy, which may
+# be older or may have been fetched from anywhere.
+hand_over_to_repo_installer() {
+    local installer="$repo_root/install.sh"
+    if [[ ! -f $installer ]]; then
+        die "'$installer' is missing, so the run cannot continue. Nothing was applied."
+    fi
+
+    step "Running the installer of $repo_root"
+    export "$bootstrap_marker=1"
+    exec "$BASH" -- "$installer" "$@"
 }
 
 ##### Distribution #####
@@ -183,7 +461,12 @@ require_supported_distro() {
     done <"$file"
 
     if [[ $distro_id != "$supported_id" || $distro_version_id != "$supported_version_id" ]]; then
-        die "this installer supports Debian GNU/Linux ${supported_version_id} (trixie) only, but ${file} reports ID='${distro_id}' VERSION_ID='${distro_version_id}'. Nothing was installed. On another system, install chezmoi yourself and run: chezmoi init --apply --source '${repo_root}'"
+        # A bootstrap run has no repository yet, so the hint names the remote.
+        local chezmoi_hint="chezmoi init --apply '${repo_url}'"
+        if [[ -n $repo_root ]]; then
+            chezmoi_hint="chezmoi init --apply --source '${repo_root}'"
+        fi
+        die "this installer supports Debian GNU/Linux ${supported_version_id} (trixie) only, but ${file} reports ID='${distro_id}' VERSION_ID='${distro_version_id}'. Nothing was installed. On another system, install chezmoi yourself and run: ${chezmoi_hint}"
     fi
 }
 
@@ -509,11 +792,44 @@ print_summary() {
 
 ##### Main #####
 
+# 'curl ... | bash' leaves the rest of this script on stdin, where sudo would
+# read it as a password. Reopening stdin is only safe once bash has read the
+# whole script, which is the case here: main is the last command of the file.
+detach_script_from_stdin() {
+    if [[ -t 0 ]]; then
+        return 0
+    fi
+    if (: </dev/tty) 2>/dev/null; then
+        exec </dev/tty
+    else
+        exec </dev/null
+    fi
+}
+
+# A bootstrap run only prepares the repository and then hands over, so this is
+# the whole run for it. Everything after it needs the repository.
+bootstrap_phase() {
+    step 'Fetching the dotfiles repository'
+    if ! acquire_repo; then
+        step 'Dry run complete, nothing was cloned'
+        exit 0
+    fi
+    hand_over_to_repo_installer "$@"
+}
+
 main() {
     parse_args "$@"
     reject_root
-    resolve_repo
+    detach_script_from_stdin
+
+    local bootstrap=0
+    resolve_repo || bootstrap=1
     require_supported_distro
+    if ((bootstrap)); then
+        bootstrap_phase "$@"
+    fi
+
+    read_repo_layout
     load_packages
 
     step 'Checking prerequisites'

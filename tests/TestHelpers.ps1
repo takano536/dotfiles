@@ -43,7 +43,8 @@ $RealTmux = Find-RealExecutable 'tmux'
 function New-Sandbox {
     <#
         Creates an isolated copy of the installable part of the repository plus
-        a fake HOME and a directory for fake executables. The repository copy
+        a fake HOME, a directory for fake executables and a downloaded copy of
+        install.ps1 that has no repository around it. The repository copy
         deliberately contains a space so that path quoting stays covered.
     #>
     param(
@@ -56,23 +57,32 @@ function New-Sandbox {
     $bin = Join-Path $root 'bin'
     $elsewhere = Join-Path $root 'elsewhere'
     $scoop = Join-Path $root 'scoop'
-    foreach ($directory in @($repo, $sandboxHome, $bin, $elsewhere, $scoop)) {
+    # Where a downloaded installer sits, and what Scoop hands out on demand.
+    $downloaded = Join-Path $root 'downloaded'
+    $provides = Join-Path $root 'provides'
+    foreach ($directory in @($repo, $sandboxHome, $bin, $elsewhere, $scoop, $downloaded, $provides)) {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
 
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'install.ps1') -Destination $repo
+    Copy-Item -LiteralPath (Join-Path $RepoRoot 'install.ps1') -Destination $downloaded
     Copy-Item -LiteralPath (Join-Path $RepoRoot '.chezmoiroot') -Destination $repo
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'home') -Destination $repo -Recurse
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'packages') -Destination $repo -Recurse
 
     return [pscustomobject]@{
-        Root      = $root
-        Repo      = $repo
-        Script    = Join-Path $repo 'install.ps1'
-        Home      = $sandboxHome
-        Bin       = $bin
-        Elsewhere = $elsewhere
-        Scoop     = $scoop
+        Root        = $root
+        Repo        = $repo
+        Script      = Join-Path $repo 'install.ps1'
+        Standalone  = Join-Path $downloaded 'install.ps1'
+        Home        = $sandboxHome
+        Bin         = $bin
+        Elsewhere   = $elsewhere
+        Scoop       = $scoop
+        Provides    = $provides
+        # Where a bootstrap run clones to: chezmoi's default source directory
+        # inside the sandbox home.
+        CloneTarget = Join-Path (Join-Path (Join-Path $sandboxHome '.local') 'share') 'chezmoi'
     }
 }
 
@@ -152,7 +162,9 @@ function New-FakeScoop {
         the installer inspects: 'install <name>' creates
         <ScoopRoot>\apps\<name>\current and 'bucket add <name>' creates
         <ScoopRoot>\buckets\<name>. With -FailPattern, invocations whose
-        arguments contain that text exit 1.
+        arguments contain that text exit 1. With -ProvideFrom, 'install <name>'
+        also copies a fake <name> prepared in that directory into the shims, so
+        that a package this fake installs really becomes callable.
     #>
     param(
         [Parameter(Mandatory)]
@@ -161,10 +173,13 @@ function New-FakeScoop {
         [Parameter(Mandatory)]
         [string]$ScoopRoot,
 
-        [string]$FailPattern
+        [string]$FailPattern,
+
+        [string]$ProvideFrom
     )
 
     $log = Join-Path $Directory 'scoop.log'
+    $shims = Join-Path $ScoopRoot 'shims'
 
     if ($env:OS -eq 'Windows_NT') {
         $path = Join-Path $Directory 'scoop.cmd'
@@ -178,8 +193,16 @@ function New-FakeScoop {
         $lines += @(
             "if `"%1`" == `"install`" mkdir `"$ScoopRoot\apps\%2\current`" 2>nul"
             "if `"%1`" == `"bucket`" if `"%2`" == `"add`" mkdir `"$ScoopRoot\buckets\%3`" 2>nul"
-            'exit /b 0'
         )
+        if ($ProvideFrom) {
+            $lines += @(
+                "if not `"%1`" == `"install`" goto :done"
+                "mkdir `"$shims`" 2>nul"
+                "if exist `"$ProvideFrom\%2.cmd`" copy /y `"$ProvideFrom\%2.cmd`" `"$shims\%2.cmd`" >nul"
+                ':done'
+            )
+        }
+        $lines += 'exit /b 0'
     }
     else {
         $path = Join-Path $Directory 'scoop'
@@ -190,12 +213,120 @@ function New-FakeScoop {
         if ($FailPattern) {
             $lines += "case `"`$*`" in *$FailPattern*) exit 1;; esac"
         }
-        # The child PATH only contains the fake executables, so mkdir needs its
-        # absolute path.
+        # The child PATH only contains the fake executables, so the coreutils
+        # need their absolute paths.
         $lines += @(
             "if [ `"`$1`" = install ]; then /bin/mkdir -p '$ScoopRoot/apps/'`"`$2`"'/current'; fi"
             "if [ `"`$1`" = bucket ] && [ `"`$2`" = add ]; then /bin/mkdir -p '$ScoopRoot/buckets/'`"`$3`"; fi"
-            'exit 0'
+        )
+        if ($ProvideFrom) {
+            $lines += @(
+                "if [ `"`$1`" = install ] && [ -f '$ProvideFrom/'`"`$2`" ]; then"
+                "    /bin/mkdir -p '$shims'"
+                "    /bin/cp '$ProvideFrom/'`"`$2`" '$shims/'`"`$2`""
+                'fi'
+            )
+        }
+        $lines += 'exit 0'
+    }
+
+    Set-Content -LiteralPath $path -Value $lines -Encoding ASCII
+    if ($env:OS -ne 'Windows_NT') {
+        & chmod '+x' $path
+    }
+
+    return $log
+}
+
+function New-FakeGit {
+    <#
+        Writes a fake git that logs its arguments and answers the commands the
+        bootstrap uses: 'clone' copies -SourceRepo instead of reaching GitHub,
+        and the questions about an existing checkout are answered from -Origin
+        and -Dirty. With -FailClone the clone fails like a git that cannot reach
+        the remote.
+
+        The logic lives in a PowerShell script so that one implementation serves
+        both platforms; the executable on PATH is a thin launcher that logs the
+        call, which is what the tests assert on.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$Directory,
+
+        [Parameter(Mandatory)]
+        [string]$SourceRepo,
+
+        [string]$Origin = 'https://github.com/takano536/dotfiles.git',
+
+        [switch]$Dirty,
+
+        [switch]$FailClone
+    )
+
+    $log = Join-Path $Directory 'git.log'
+    $worker = Join-Path $Directory 'fake-git.ps1'
+
+    $body = @(
+        "Set-StrictMode -Version Latest"
+        "`$ErrorActionPreference = 'Stop'"
+        "`$source = '$SourceRepo'"
+        "`$origin = '$Origin'"
+        "`$dirty = `$$([bool]$Dirty)"
+        "`$failClone = `$$([bool]$FailClone)"
+        '$call = @($args)'
+        '$directory = $null'
+        "if (`$call.Count -ge 2 -and `$call[0] -eq '-C') {"
+        '    $directory = $call[1]'
+        '    $call = @($call[2..($call.Count - 1)])'
+        '}'
+        'switch ($call[0]) {'
+        "    'clone' {"
+        '        if ($failClone) {'
+        "            [Console]::Error.WriteLine('fatal: simulated clone failure')"
+        '            exit 128'
+        '        }'
+        '        $target = $call[-1]'
+        "        New-Item -ItemType Directory -Force -Path (Join-Path `$target '.git') | Out-Null"
+        '        Get-ChildItem -LiteralPath $source -Force |'
+        '            Copy-Item -Destination $target -Recurse -Force'
+        '        exit 0'
+        '    }'
+        "    'rev-parse' {"
+        "        if (`$directory -and (Test-Path -LiteralPath (Join-Path `$directory '.git'))) {"
+        "            Write-Output (Join-Path `$directory '.git')"
+        '            exit 0'
+        '        }'
+        '        exit 128'
+        '    }'
+        "    'remote' {"
+        '        Write-Output $origin'
+        '        exit 0'
+        '    }'
+        "    'status' {"
+        "        if (`$dirty) { Write-Output ' M home/dot_bashrc' }"
+        '        exit 0'
+        '    }'
+        '    default { exit 0 }'
+        '}'
+    )
+    Set-Content -LiteralPath $worker -Value $body -Encoding ASCII
+
+    if ($env:OS -eq 'Windows_NT') {
+        $path = Join-Path $Directory 'git.cmd'
+        $lines = @(
+            '@echo off'
+            ">>`"$log`" echo %*"
+            "`"$PowerShellExe`" -NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$worker`" %*"
+            'exit /b %ERRORLEVEL%'
+        )
+    }
+    else {
+        $path = Join-Path $Directory 'git'
+        $lines = @(
+            '#!/bin/sh'
+            "printf '%s\n' `"`$*`" >>'$log'"
+            "exec '$PowerShellExe' -NoLogo -NoProfile -File '$worker' `"`$@`""
         )
     }
 
@@ -289,6 +420,8 @@ function Invoke-SandboxProcess {
         $environment.Remove($name)
     }
     $environment.Remove('SCOOP_GLOBAL')
+    # A marker of an outer run must never leak into a bootstrap under test.
+    $environment.Remove('DOTFILES_BOOTSTRAP')
     $environment['PATH'] = $PathEntries -join [IO.Path]::PathSeparator
     $environment['HOME'] = $Sandbox.Home
     $environment['USERPROFILE'] = $Sandbox.Home
@@ -320,6 +453,11 @@ function Invoke-SandboxProcess {
 }
 
 function Invoke-InstallScript {
+    <#
+        Runs install.ps1 from the repository copy (repository-local mode), or
+        with -Standalone the downloaded copy that has no repository around it
+        (bootstrap mode).
+    #>
     param(
         [Parameter(Mandatory)]
         $Sandbox,
@@ -330,15 +468,22 @@ function Invoke-InstallScript {
 
         [string[]]$PathEntries,
 
-        [hashtable]$ExtraEnvironment = @{}
+        [hashtable]$ExtraEnvironment = @{},
+
+        [switch]$Standalone
     )
+
+    $script = $Sandbox.Script
+    if ($Standalone) {
+        $script = $Sandbox.Standalone
+    }
 
     return Invoke-SandboxProcess -Sandbox $Sandbox -FilePath $PowerShellExe -Arguments (@(
             '-NoLogo'
             '-NoProfile'
             '-NonInteractive'
             '-ExecutionPolicy', 'Bypass'
-            '-File', $Sandbox.Script
+            '-File', $script
         ) + $Arguments) -WorkingDirectory $WorkingDirectory -PathEntries $PathEntries `
         -ExtraEnvironment $ExtraEnvironment
 }
