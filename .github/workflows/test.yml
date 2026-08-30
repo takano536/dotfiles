@@ -193,6 +193,8 @@ jobs:
           test -x /tmp/bootstrap-home/.local/bin/chezmoi
           test -f /tmp/bootstrap-home/.bashrc
 
-          # A second run reuses the clone instead of cloning again.
-          su tester -c 'HOME=/tmp/bootstrap-home XDG_DATA_HOME="/tmp/bootstrap data" bash -s -- --skip-packages' </tmp/install.sh |
-              grep -q 'using the existing checkout'
+          # A second run reuses the clone instead of cloning again. Its output
+          # goes to a file: 'grep -q' would close the pipe on the first match
+          # and the installer would die of SIGPIPE.
+          su tester -c 'HOME=/tmp/bootstrap-home XDG_DATA_HOME="/tmp/bootstrap data" bash -s -- --skip-packages' </tmp/install.sh | tee /tmp/second-run.log
+          grep -q 'using the existing checkout' /tmp/second-run.log
