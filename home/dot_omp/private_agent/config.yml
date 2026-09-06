@@ -1,0 +1,61 @@
+setupVersion: 2
+modelRoles:
+  default: anthropic/claude-sonnet-5:medium
+  advisor: openai-codex/gpt-5.6-luna:max
+  smol: anthropic/claude-haiku-4-5:auto
+  slow: openai-codex/gpt-6-astra:low
+  vision: anthropic/claude-sonnet-5:high
+  plan: anthropic/claude-opus-5:high
+  designer: anthropic/claude-sonnet-5:high
+  commit: anthropic/claude-haiku-4-5:auto
+  tiny: anthropic/claude-haiku-4-5:auto
+  task: openai-codex/gpt-5.6-luna:max
+retry:
+  enabled: true
+  maxRetries: 10
+  baseDelayMs: 500
+  maxDelayMs: 300000
+  modelFallback: true
+  fallbackRevertPolicy: cooldown-expiry
+  fallbackChains:
+    default:
+      - openai-codex/gpt-5.6-sol:low
+    advisor:
+      - anthropic/claude-sonnet-5:medium
+    smol:
+      - openai-codex/gpt-5.6-luna:medium
+    slow:
+      - anthropic/claude-opus-5:high
+    vision:
+      - openai-codex/gpt-5.6-sol:medium
+    plan:
+      - openai-codex/gpt-5.6-sol:high
+    designer:
+      - openai-codex/gpt-5.6-sol:medium
+    commit:
+      - openai-codex/gpt-5.6-luna:medium
+    tiny:
+      - openai-codex/gpt-5.6-luna:medium
+    task:
+      - anthropic/claude-sonnet-5:medium
+cycleOrder:
+  - smol
+  - default
+  - slow
+theme:
+  dark: dark-catppuccin
+  light: light-catppuccin
+symbolPreset: nerd
+colorBlindMode: false
+statusLine:
+  preset: nerd
+  separator: powerline-thin
+  transparent: false
+  compactThinkingLevel: false
+  sessionAccent: true
+  showHookStatus: true
+  contextLine: percentage
+codexResets:
+  autoRedeem: "no"
+autolearn:
+  autoContinue: false
