@@ -7,6 +7,11 @@
  * To make lasting changes to preferences, you will have to edit the user.js.
  */
 
+// sidebar展開時にページ幅変えない
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+user_pref("sidebar.revamp", true);
+user_pref("sidebar.visibility", "expand-on-hover");
+
 /****************************************************************************
  * Betterfox                                                                *
  * "Ad meliora"                                                             *
