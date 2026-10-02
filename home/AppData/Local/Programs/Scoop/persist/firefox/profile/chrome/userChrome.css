@@ -11,12 +11,12 @@
 
 /* 左配置 */
 #sidebar-box:not([sidebar-positionend], [positionend]) {
-  inset-inline-start: 40px !important;
+  inset-inline-start: 45px !important;
 }
 
 /* 右配置 */
 #sidebar-box:is([sidebar-positionend], [positionend]) {
-  inset-inline-end: 40px !important;
+  inset-inline-end: 45px !important;
 }
 
 /* ランチャーをパネルより手前に表示 */
@@ -57,4 +57,180 @@ treechildren::-moz-tree-indentation {
 #bookmarks-view {
   margin-inline-start: 16px !important;
   margin-block-start: 8px !important;
+}
+
+/* ページ周囲にテーマ背景を見せる角丸装飾 */
+#main-window {
+  --uc-page-gap: 5px;
+  --uc-page-radius: 10px;
+}
+
+/* Firefoxが持つテーマ背景をウィンドウ全体に使用する */
+#main-window:not([chromehidden~="toolbar"]) body {
+  background-color:
+    var(--lwt-accent-color, var(--toolbar-background-color)) !important;
+  background-image:
+    var(--toolbox-background-image, var(--lwt-additional-images, none)) !important;
+  background-repeat:
+    var(--toolbox-background-repeat, no-repeat) !important;
+  background-position:
+    var(--toolbox-background-position, right top) !important;
+  background-size:
+    var(--toolbox-background-size, auto) !important;
+}
+
+/* アドレスバー行と同じ背景色を、テーマ背景に重ねる */
+#main-window:not([chromehidden~="toolbar"]) #browser {
+  background-color:
+    var(--toolbar-bgcolor, var(--toolbar-background-color, transparent))
+    !important;
+  background-image: none !important;
+}
+
+/* 内側には背景を重ねない */
+#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabbox {
+  background: transparent !important;
+}
+
+/* ツールバー下の境界線を除去 */
+#main-window:not([chromehidden~="toolbar"]) #navigator-toolbox {
+  border-bottom: none !important;
+}
+
+/* 上は余白なし、左右・下だけ枠を残す */
+#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabpanels {
+  margin-block-start: 0 !important;
+  margin-inline: var(--uc-page-gap) !important;
+  margin-block-end: var(--uc-page-gap) !important;
+
+  border-radius: var(--uc-page-radius) !important;
+  clip-path: inset(0 round var(--uc-page-radius)) !important;
+  background: transparent !important;
+}
+
+/* Firefox標準の片側だけの角丸と重ならないようにする */
+#main-window:not([chromehidden~="toolbar"])
+  #tabbrowser-tabpanels .browserContainer {
+  border-radius: 0 !important;
+}
+
+/* 全画面表示では装飾を解除 */
+#main-window:is([inFullscreen], [inDOMFullscreen]) {
+  --uc-page-gap: 0px;
+  --uc-page-radius: 0px;
+}
+
+#main-window:is([inFullscreen], [inDOMFullscreen])
+  #tabbrowser-tabpanels {
+  clip-path: none !important;
+}
+
+/* サイドバーも、ページと同じ角丸・下余白にする */
+#main-window:not([chromehidden~="toolbar"])
+  #sidebar-box:not([hidden]) {
+  inset-block-start: 0 !important;
+  inset-block-end: var(--uc-page-gap) !important;
+
+  padding: 0 !important;
+  border: none !important;
+  border-radius: var(--uc-page-radius) !important;
+  clip-path: inset(0 round var(--uc-page-radius)) !important;
+
+  /*
+   * ページ周囲と同じ構成：
+   * テーマ背景の上に、アドレスバー行の背景色を重ねる。
+   * 半透明の色だけを使うとページが透けるので、
+   * サイドバー自身にもテーマ背景を用意する。
+   */
+  --uc-sidebar-toolbar-color:
+    var(--toolbar-bgcolor, var(--toolbar-background-color, transparent));
+
+  background-color:
+    var(--lwt-accent-color, var(--toolbar-background-color)) !important;
+
+  background-image:
+    linear-gradient(
+      var(--uc-sidebar-toolbar-color),
+      var(--uc-sidebar-toolbar-color)
+    ),
+    var(--toolbox-background-image, var(--lwt-additional-images, none))
+    !important;
+
+  /* テーマ画像の基準をパネルではなくウィンドウに揃える */
+  background-attachment: fixed !important;
+  background-position:
+    left top,
+    var(--toolbox-background-position, right top) !important;
+  background-repeat:
+    no-repeat,
+    var(--toolbox-background-repeat, no-repeat) !important;
+  background-size:
+    auto,
+    var(--toolbox-background-size, auto) !important;
+}
+
+/* 内側の白いカード背景・標準の角丸・縁取りを解除 */
+#main-window:not([chromehidden~="toolbar"]) #sidebar-box #sidebar {
+  background: transparent !important;
+
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* ヘッダーにも別の背景や境界線を残さない */
+#main-window:not([chromehidden~="toolbar"]) #sidebar-header {
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+/* ページ領域に残る標準の縁取り・影を消す */
+#main-window:not([chromehidden~="toolbar"])
+  #tabbrowser-tabpanels .browserContainer {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ページ・サイドバー共通の境界線 */
+#main-window {
+  --uc-frame-line-width: 1px;
+  --uc-frame-line-color: rgb(0 0 0 / 0.18);
+}
+
+/* ページ側の枠の基準位置 */
+#main-window:not([chromehidden~="toolbar"])
+  #tabbrowser-tabpanels {
+  position: relative !important;
+}
+
+/* 四辺と角丸に沿う枠を、内側に重ねる */
+#main-window:not([chromehidden~="toolbar"])
+  #tabbrowser-tabpanels::after,
+#main-window:not([chromehidden~="toolbar"])
+  #sidebar-box:not([hidden])::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  box-sizing: border-box !important;
+
+  border:
+    var(--uc-frame-line-width) solid var(--uc-frame-line-color)
+    !important;
+  border-radius: var(--uc-page-radius) !important;
+
+  background: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+/* 全画面では枠を表示しない */
+#main-window:is([inFullscreen], [inDOMFullscreen])
+  #tabbrowser-tabpanels::after,
+#main-window:is([inFullscreen], [inDOMFullscreen])
+  #sidebar-box::after {
+  display: none !important;
 }
