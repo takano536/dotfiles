@@ -1,76 +1,51 @@
-#browser {
-  position: relative !important;
-}
+/* ===== 共通設定 ===== */
 
-/* パネルをページ上へ重ねる */
-#sidebar-box:not([hidden]) {
-  position: absolute !important;
-  inset-block: 0 !important;
-  z-index: var(--browser-area-z-index-sidebar-expand-on-hover, 4) !important;
-}
-
-/* 左配置 */
-#sidebar-box:not([sidebar-positionend], [positionend]) {
-  inset-inline-start: 45px !important;
-}
-
-/* 右配置 */
-#sidebar-box:is([sidebar-positionend], [positionend]) {
-  inset-inline-end: 45px !important;
-}
-
-/* ランチャーをパネルより手前に表示 */
-#sidebar-container {
-  z-index: calc(var(--browser-area-z-index-sidebar-expand-on-hover, 4) + 1) !important;
-}
-
-#sidebar-splitter {
-  display: none !important;
-}
-
-/* ブックマーク・履歴の各行にゆとりを持たせる */
-treechildren::-moz-tree-row,
-treecol:not([hideheader="true"]),
-.tree-columnpicker-button {
-  min-height: max(28px, 1.3em) !important;
-  border-radius: 2px !important;
-}
-
-/* アイコンと文字の間隔 */
-treechildren::-moz-tree-image {
-  margin-inline-end: 10px !important;
-}
-
-/* フォルダーの展開矢印まわり */
-treechildren::-moz-tree-twisty {
-  padding-top: 0 !important;
-  padding-inline: 4px !important;
-  width: 16px !important;
-}
-
-/* 子項目のインデント */
-treechildren::-moz-tree-indentation {
-  width: 16px !important;
-}
-
-/* 検索欄と一覧の間隔・検索バーと一覧を少し広げる */
-#bookmarks-view {
-  margin-inline-start: 16px !important;
-  margin-block-start: 8px !important;
-}
-
-/* ページ周囲にテーマ背景を見せる角丸装飾 */
 #main-window {
   --uc-page-gap: 5px;
   --uc-page-radius: 10px;
+  --uc-sidebar-edge: 40px;
+  --uc-frame-line-width: 1px;
+  --uc-frame-opacity: 0.55;
+
+  --uc-toolbar-color:
+    var(--toolbar-bgcolor, var(--toolbar-background-color, transparent));
+
+  --uc-page-border-color:
+    var(
+      --tab-border-color-selected,
+      var(--chrome-content-separator-color, currentColor)
+    );
+
+  --uc-page-border-image:
+    linear-gradient(
+      var(--uc-page-border-color),
+      var(--uc-page-border-color)
+    );
+
+  --uc-sidebar-border-color:
+    var(
+      --chrome-content-separator-color,
+      var(--tab-border-color-selected, currentColor)
+    );
 }
 
-/* Firefoxが持つテーマ背景をウィンドウ全体に使用する */
+/* Novaのタブがアクセント枠になる条件で、内部の配色を使用 */
+@media -moz-pref("browser.nova.enabled") {
+  @media not ((prefers-contrast) or (-moz-native-theme)) {
+    #main-window[theme-in-app] {
+      --uc-page-border-image: var(--tab-border-color-accent);
+    }
+  }
+}
+
+/* ===== テーマ背景 ===== */
+
 #main-window:not([chromehidden~="toolbar"]) body {
   background-color:
     var(--lwt-accent-color, var(--toolbar-background-color)) !important;
   background-image:
-    var(--toolbox-background-image, var(--lwt-additional-images, none)) !important;
+    var(--toolbox-background-image, var(--lwt-additional-images, none))
+    !important;
   background-repeat:
     var(--toolbox-background-repeat, no-repeat) !important;
   background-position:
@@ -79,84 +54,117 @@ treechildren::-moz-tree-indentation {
     var(--toolbox-background-size, auto) !important;
 }
 
-/* アドレスバー行と同じ背景色を、テーマ背景に重ねる */
 #main-window:not([chromehidden~="toolbar"]) #browser {
-  background-color:
-    var(--toolbar-bgcolor, var(--toolbar-background-color, transparent))
-    !important;
+  position: relative !important;
+  background-color: var(--uc-toolbar-color) !important;
   background-image: none !important;
 }
 
-/* 内側には背景を重ねない */
-#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabbox {
-  background: transparent !important;
-}
-
-/* ツールバー下の境界線を除去 */
 #main-window:not([chromehidden~="toolbar"]) #navigator-toolbox {
   border-bottom: none !important;
 }
 
-/* 上は余白なし、左右・下だけ枠を残す */
-#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabpanels {
-  margin-block-start: 0 !important;
-  margin-inline: var(--uc-page-gap) !important;
-  margin-block-end: var(--uc-page-gap) !important;
+/* ===== ページと外枠 ===== */
 
-  border-radius: var(--uc-page-radius) !important;
-  clip-path: inset(0 round var(--uc-page-radius)) !important;
+/*
+ * 外枠の基準。
+ * 標準のtranslate: 0による独立した描画層を解除し、
+ * 外枠だけをサイドバーより手前に出せるようにする。
+ */
+#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabbox {
+  position: relative !important;
+  translate: none !important;
+  z-index: auto !important;
+  isolation: auto !important;
+
+  overflow: visible !important;
   background: transparent !important;
 }
 
-/* Firefox標準の片側だけの角丸と重ならないようにする */
+/* 上・右の追加余白はなし。左・下だけ余白を残す */
+#main-window:not([chromehidden~="toolbar"]) #tabbrowser-tabpanels {
+  position: relative !important;
+  z-index: 0 !important;
+
+  margin-block-start: 0 !important;
+  margin-block-end: var(--uc-page-gap) !important;
+  margin-left: var(--uc-page-gap) !important;
+  margin-right: 0 !important;
+
+  border-radius: var(--uc-page-radius) !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+/* ページ内側の標準の縁取り・影・角丸を解除 */
 #main-window:not([chromehidden~="toolbar"])
   #tabbrowser-tabpanels .browserContainer {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   border-radius: 0 !important;
 }
 
-/* 全画面表示では装飾を解除 */
-#main-window:is([inFullscreen], [inDOMFullscreen]) {
-  --uc-page-gap: 0px;
-  --uc-page-radius: 0px;
+/* 外枠：ページ領域に合わせ、サイドバーより手前に描く */
+#main-window:not([chromehidden~="toolbar"])
+  #tabbrowser-tabbox::after {
+  content: "" !important;
+  position: absolute !important;
+
+  top: 0 !important;
+  right: 0 !important;
+  bottom: var(--uc-page-gap) !important;
+  left: var(--uc-page-gap) !important;
+
+  box-sizing: border-box !important;
+  border: var(--uc-frame-line-width) solid transparent !important;
+  border-radius: var(--uc-page-radius) !important;
+
+  background-image: var(--uc-page-border-image) !important;
+  background-origin: border-box !important;
+  background-clip: border-box !important;
+
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0) border-box !important;
+  mask-composite: exclude !important;
+
+  opacity: var(--uc-frame-opacity) !important;
+  pointer-events: none !important;
+  z-index:
+    calc(var(--browser-area-z-index-sidebar-expand-on-hover, 4) + 2)
+    !important;
 }
 
-#main-window:is([inFullscreen], [inDOMFullscreen])
-  #tabbrowser-tabpanels {
-  clip-path: none !important;
-}
+/* ===== サイドバー ===== */
 
-/* サイドバーも、ページと同じ角丸・下余白にする */
+/* ページ上へ重ねる。上・下の位置はページに揃える */
 #main-window:not([chromehidden~="toolbar"])
   #sidebar-box:not([hidden]) {
+  position: absolute !important;
   inset-block-start: 0 !important;
   inset-block-end: var(--uc-page-gap) !important;
+
+  z-index:
+    var(--browser-area-z-index-sidebar-expand-on-hover, 4)
+    !important;
 
   padding: 0 !important;
   border: none !important;
   border-radius: var(--uc-page-radius) !important;
-  clip-path: inset(0 round var(--uc-page-radius)) !important;
+  overflow: hidden !important;
 
-  /*
-   * ページ周囲と同じ構成：
-   * テーマ背景の上に、アドレスバー行の背景色を重ねる。
-   * 半透明の色だけを使うとページが透けるので、
-   * サイドバー自身にもテーマ背景を用意する。
-   */
-  --uc-sidebar-toolbar-color:
-    var(--toolbar-bgcolor, var(--toolbar-background-color, transparent));
-
+  /* 半透明のツールバー色だけではページが透けるため、背景も描く */
   background-color:
     var(--lwt-accent-color, var(--toolbar-background-color)) !important;
-
   background-image:
     linear-gradient(
-      var(--uc-sidebar-toolbar-color),
-      var(--uc-sidebar-toolbar-color)
+      var(--uc-toolbar-color),
+      var(--uc-toolbar-color)
     ),
     var(--toolbox-background-image, var(--lwt-additional-images, none))
     !important;
 
-  /* テーマ画像の基準をパネルではなくウィンドウに揃える */
   background-attachment: fixed !important;
   background-position:
     left top,
@@ -169,46 +177,47 @@ treechildren::-moz-tree-indentation {
     var(--toolbox-background-size, auto) !important;
 }
 
-/* 内側の白いカード背景・標準の角丸・縁取りを解除 */
-#main-window:not([chromehidden~="toolbar"]) #sidebar-box #sidebar {
-  background: transparent !important;
+/* 左配置 */
+#main-window:not([chromehidden~="toolbar"])
+  #sidebar-box:not([hidden]):not([sidebar-positionend], [positionend]) {
+  inset-inline-start: var(--uc-sidebar-edge) !important;
+  inset-inline-end: auto !important;
+}
 
+/* 右配置 */
+#main-window:not([chromehidden~="toolbar"])
+  #sidebar-box:not([hidden]):is([sidebar-positionend], [positionend]) {
+  inset-inline-start: auto !important;
+  inset-inline-end: var(--uc-sidebar-edge) !important;
+}
+
+/* ランチャーをパネルより手前に表示 */
+#sidebar-container {
+  z-index:
+    calc(var(--browser-area-z-index-sidebar-expand-on-hover, 4) + 1)
+    !important;
+}
+
+#sidebar-splitter {
+  display: none !important;
+}
+
+/* サイドバー内側の白い背景・縁取りを解除 */
+#main-window:not([chromehidden~="toolbar"]) #sidebar-box #sidebar {
   margin: 0 !important;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
+  background: transparent !important;
 }
 
-/* ヘッダーにも別の背景や境界線を残さない */
 #main-window:not([chromehidden~="toolbar"]) #sidebar-header {
   background: transparent !important;
   border-bottom: none !important;
 }
 
-/* ページ領域に残る標準の縁取り・影を消す */
-#main-window:not([chromehidden~="toolbar"])
-  #tabbrowser-tabpanels .browserContainer {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* ページ・サイドバー共通の境界線 */
-#main-window {
-  --uc-frame-line-width: 1px;
-  --uc-frame-line-color: rgb(0 0 0 / 0.18);
-}
-
-/* ページ側の枠の基準位置 */
-#main-window:not([chromehidden~="toolbar"])
-  #tabbrowser-tabpanels {
-  position: relative !important;
-}
-
-/* 四辺と角丸に沿う枠を、内側に重ねる */
-#main-window:not([chromehidden~="toolbar"])
-  #tabbrowser-tabpanels::after,
+/* サイドバー自身の控えめな単色枠 */
 #main-window:not([chromehidden~="toolbar"])
   #sidebar-box:not([hidden])::after {
   content: "" !important;
@@ -216,21 +225,55 @@ treechildren::-moz-tree-indentation {
   inset: 0 !important;
   box-sizing: border-box !important;
 
-  border:
-    var(--uc-frame-line-width) solid var(--uc-frame-line-color)
-    !important;
-  border-radius: var(--uc-page-radius) !important;
+  border: var(--uc-frame-line-width) solid !important;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--uc-sidebar-border-color) 75%,
+      transparent
+    ) !important;
+  border-radius: inherit !important;
 
-  background: none !important;
-  box-shadow: none !important;
   pointer-events: none !important;
-  z-index: 10 !important;
+  z-index: 1 !important;
 }
 
-/* 全画面では枠を表示しない */
+/* ===== ブックマーク・履歴の間隔 ===== */
+
+treechildren::-moz-tree-row,
+treecol:not([hideheader="true"]),
+.tree-columnpicker-button {
+  min-height: max(28px, 1.3em) !important;
+  border-radius: 2px !important;
+}
+
+treechildren::-moz-tree-image {
+  margin-inline-end: 10px !important;
+}
+
+treechildren::-moz-tree-twisty {
+  padding-top: 0 !important;
+  padding-inline: 4px !important;
+  width: 16px !important;
+}
+
+treechildren::-moz-tree-indentation {
+  width: 16px !important;
+}
+
+#bookmarks-view {
+  margin-inline-start: 16px !important;
+  margin-block-start: 8px !important;
+}
+
+/* ===== 全画面 ===== */
+
+#main-window:is([inFullscreen], [inDOMFullscreen]) {
+  --uc-page-gap: 0px;
+  --uc-page-radius: 0px;
+}
+
 #main-window:is([inFullscreen], [inDOMFullscreen])
-  #tabbrowser-tabpanels::after,
-#main-window:is([inFullscreen], [inDOMFullscreen])
-  #sidebar-box::after {
+  :is(#tabbrowser-tabbox, #sidebar-box)::after {
   display: none !important;
 }
