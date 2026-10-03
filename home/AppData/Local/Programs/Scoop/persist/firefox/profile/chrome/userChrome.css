@@ -266,6 +266,22 @@ treechildren::-moz-tree-indentation {
   margin-block-start: 8px !important;
 }
 
+/* ===== 拡張機能の別ウィンドウ ===== */
+/* ページ：通常ウィンドウと違い、上・右にも余白を確保 */
+#main-window[web-extension-popup-window] #tabbrowser-tabpanels {
+  margin-block-start: var(--uc-page-gap) !important;
+  margin-block-end: var(--uc-page-gap) !important;
+  margin-left: var(--uc-page-gap) !important;
+  margin-right: var(--uc-page-gap) !important;
+}
+/* 虹色の枠もページと同じ位置に揃える */
+#main-window[web-extension-popup-window] #tabbrowser-tabbox::after {
+  top: var(--uc-page-gap) !important;
+  right: var(--uc-page-gap) !important;
+  bottom: var(--uc-page-gap) !important;
+  left: var(--uc-page-gap) !important;
+}
+
 /* ===== 全画面 ===== */
 
 #main-window:is([inFullscreen], [inDOMFullscreen]) {
